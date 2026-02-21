@@ -1,0 +1,44 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Root local/workflow
+.zencoder/
+.zenflow/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker runtime files
+**/.dockerignore.local
+
+# Backend (Laravel)
+backend/vendor/
+backend/storage/*.key
+backend/storage/logs/*.log
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/bootstrap/cache/*.php
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/.phpunit.cache/
+
+# Frontend (Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+frontend/tsconfig.tsbuildinfo
+
+# Optional test artifacts
+coverage/

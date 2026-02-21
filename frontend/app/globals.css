@@ -1,0 +1,349 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== CSS Custom Properties ===== */
+:root {
+  --toast-bg: #1e293b;
+  --toast-color: #f1f5f9;
+  --toast-border: #334155;
+}
+
+[data-theme="light"] {
+  --toast-bg: #ffffff;
+  --toast-color: #0f172a;
+  --toast-border: #e2e8f0;
+}
+
+/* ===== Base ===== */
+@layer base {
+  body {
+    @apply bg-dark-950 text-dark-100 font-sans antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  [data-theme="light"] body {
+    @apply bg-white text-dark-900;
+  }
+
+  * {
+    @apply box-border;
+  }
+}
+
+/* ===== Components ===== */
+@layer components {
+
+  /* --- Buttons --- */
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary-600/20 hover:shadow-primary-600/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+  }
+
+  .btn-secondary {
+    @apply bg-dark-800 hover:bg-dark-700 text-dark-100 font-semibold py-3 px-6 rounded-xl border border-dark-600 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-accent {
+    @apply bg-accent-500 hover:bg-accent-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 ease-in-out transform hover:scale-[1.02] shadow-lg shadow-accent-500/20;
+  }
+
+  /* --- Card --- */
+  .card {
+    @apply bg-dark-900/80 backdrop-blur-sm border border-dark-700/50 rounded-2xl p-6 shadow-xl shadow-black/10 transition-all duration-300;
+  }
+
+  .card-hover {
+    @apply card hover:border-primary-500/30 hover:shadow-primary-500/5 hover:translate-y-[-2px];
+  }
+
+  /* --- Form --- */
+  .input-field {
+    @apply w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-3 text-dark-100 placeholder:text-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-dark-300 mb-1.5;
+  }
+
+  /* --- Badge --- */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
+  }
+
+  .badge-pending {
+    @apply badge bg-yellow-500/20 text-yellow-400;
+  }
+
+  .badge-processing {
+    @apply badge bg-blue-500/20 text-blue-400;
+  }
+
+  .badge-delivered {
+    @apply badge bg-primary-500/20 text-primary-400;
+  }
+
+  .badge-cancelled {
+    @apply badge bg-red-500/20 text-red-400;
+  }
+
+  /* --- Utilities --- */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent;
+  }
+
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+}
+
+/* ====================================================================
+   LIGHT THEME OVERRIDES
+   ==================================================================== */
+
+[data-theme="light"] .btn-secondary {
+  @apply bg-dark-100 hover:bg-dark-200 text-dark-800 border-dark-300;
+}
+
+[data-theme="light"] .card {
+  @apply bg-white border-dark-200/60 shadow-lg shadow-dark-200/20;
+}
+
+[data-theme="light"] .card-hover {
+  @apply bg-white border-dark-200/60 shadow-lg shadow-dark-200/20 hover:border-primary-500/40 hover:shadow-primary-500/10 hover:translate-y-[-2px];
+}
+
+[data-theme="light"] .input-field {
+  @apply bg-dark-50 border-dark-300 text-dark-900 placeholder:text-dark-400;
+}
+
+[data-theme="light"] .label {
+  @apply text-dark-600;
+}
+
+[data-theme="light"] .badge-pending {
+  @apply bg-yellow-100 text-yellow-700;
+}
+
+[data-theme="light"] .badge-processing {
+  @apply bg-blue-100 text-blue-700;
+}
+
+[data-theme="light"] .badge-delivered {
+  @apply bg-primary-100 text-primary-700;
+}
+
+[data-theme="light"] .badge-cancelled {
+  @apply bg-red-100 text-red-700;
+}
+
+[data-theme="light"] .gradient-text {
+  @apply from-primary-600 to-primary-800;
+}
+
+[data-theme="light"] .glass {
+  @apply bg-white/70 backdrop-blur-xl border-dark-200/50;
+}
+
+/* Light theme: text color overrides for common dark-mode text utility classes */
+[data-theme="light"] .text-dark-100 {
+  color: #0f172a;
+}
+
+[data-theme="light"] .text-dark-200 {
+  color: #1e293b;
+}
+
+[data-theme="light"] .text-dark-300 {
+  color: #334155;
+}
+
+[data-theme="light"] .text-dark-400 {
+  color: #475569;
+}
+
+[data-theme="light"] .text-dark-500 {
+  color: #64748b;
+}
+
+/* Light theme: background overrides for common dark-mode bg utility classes */
+[data-theme="light"] .bg-dark-950 {
+  background-color: #ffffff;
+}
+
+[data-theme="light"] .bg-dark-900 {
+  background-color: #f8fafc;
+}
+
+[data-theme="light"] .bg-dark-900\/80 {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="light"] .bg-dark-900\/50 {
+  background-color: rgba(248, 250, 252, 0.5);
+}
+
+[data-theme="light"] .bg-dark-800 {
+  background-color: #f1f5f9;
+}
+
+[data-theme="light"] .bg-dark-800\/50 {
+  background-color: rgba(241, 245, 249, 0.5);
+}
+
+[data-theme="light"] .bg-dark-800\/30 {
+  background-color: rgba(241, 245, 249, 0.3);
+}
+
+[data-theme="light"] .bg-dark-700 {
+  background-color: #e2e8f0;
+}
+
+[data-theme="light"] .bg-dark-700\/50 {
+  background-color: rgba(226, 232, 240, 0.5);
+}
+
+/* Light theme: border overrides */
+[data-theme="light"] .border-dark-700\/50 {
+  border-color: rgba(203, 213, 225, 0.5);
+}
+
+[data-theme="light"] .border-dark-700\/30 {
+  border-color: rgba(203, 213, 225, 0.3);
+}
+
+[data-theme="light"] .border-dark-700 {
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .border-dark-600 {
+  border-color: #cbd5e1;
+}
+
+/* Light theme: specific component overrides */
+[data-theme="light"] .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme="light"] .border-white\/10 {
+  border-color: rgba(203, 213, 225, 0.5);
+}
+
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+
+/* ===== Skeleton ===== */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.25rem;
+}
+
+[data-theme="light"] .skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+}
+
+
+/* ===== Theme Toggle Button ===== */
+.theme-toggle {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  border: 2px solid;
+  border-color: #334155;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  border-color: #475569;
+}
+
+[data-theme="light"] .theme-toggle {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  border-color: #ea580c;
+}
+
+[data-theme="light"] .theme-toggle:hover {
+  border-color: #c2410c;
+  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.3);
+}
+
+.theme-toggle-knob {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2;
+}
+
+.theme-toggle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+  border-radius: 5px;
+  z-index: 1;
+}
+
+[data-theme="light"] .theme-toggle::before {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
+}
