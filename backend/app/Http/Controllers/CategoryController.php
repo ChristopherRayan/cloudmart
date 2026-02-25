@@ -113,15 +113,15 @@ class CategoryController extends Controller
             $this->deleteStoredCategoryImage($category->image_url);
 
             $path = $request->file('image')->store('category_images', 'public');
-            $fullUrl = url(Storage::url($path));
+            $publicPath = Storage::url($path);
             
-            $category->image_url = $fullUrl;
+            $category->image_url = $publicPath;
             $category->save();
 
             Cache::forget('categories.all');
 
             return $this->success([
-                'image_url' => $fullUrl,
+                'image_url' => $publicPath,
                 'category' => $category
             ], 'Category image uploaded successfully.');
         }
@@ -138,6 +138,18 @@ class CategoryController extends Controller
         $trimmed = trim($imageUrl);
         if ($trimmed === '') {
             return null;
+        }
+
+        if (filter_var($trimmed, FILTER_VALIDATE_URL)) {
+            $path = parse_url($trimmed, PHP_URL_PATH);
+            if ($path && Str::startsWith($path, '/storage/')) {
+                return $path;
+            }
+            return $trimmed;
+        }
+
+        if (Str::startsWith($trimmed, '/storage/')) {
+            return $trimmed;
         }
 
         if (Str::startsWith($trimmed, 'storage/')) {

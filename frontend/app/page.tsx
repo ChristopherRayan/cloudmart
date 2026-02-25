@@ -13,6 +13,31 @@ import Footer from '@/components/layout/Footer';
 import { useProducts } from '@/contexts/ProductContext';
 import { useAuth } from '@/contexts/AuthContext';
 
+const CATEGORY_PLACEHOLDER_IMAGE = '/images/category-placeholder.svg';
+const BEST_DEALS_VISIBLE = 3;
+
+function normalizeCategoryImageUrl(imageUrl: string | null | undefined): string | null {
+    if (!imageUrl) return null;
+
+    const trimmed = imageUrl.trim();
+    if (!trimmed) return null;
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        try {
+            const parsed = new URL(trimmed);
+            if (parsed.pathname.startsWith('/storage/')) {
+                return parsed.pathname;
+            }
+        } catch {
+            return trimmed;
+        }
+    }
+
+    if (trimmed.startsWith('/')) return trimmed;
+    if (trimmed.startsWith('storage/')) return `/${trimmed}`;
+    return trimmed;
+}
+
 export default function Home() {
     const { categories } = useProducts();
     const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -46,9 +71,9 @@ export default function Home() {
     }, [activeHeroImages.length, currentBgIndex]);
 
     useEffect(() => {
-        if (bestDeals.length <= 2) return;
+        if (bestDeals.length <= BEST_DEALS_VISIBLE) return;
         const interval = setInterval(() => {
-            setCurrentDealsIndex((prev) => (prev + 2) % bestDeals.length);
+            setCurrentDealsIndex((prev) => (prev + 1) % bestDeals.length);
         }, 5000);
         return () => clearInterval(interval);
     }, [bestDeals]);
@@ -64,7 +89,7 @@ export default function Home() {
         const fetchData = async () => {
             try {
                 const [productsRes, heroRes] = await Promise.all([
-                    apiGet<ApiResponse<{ data: Product[] }>>('/products?per_page=20', {
+                    apiGet<ApiResponse<{ data: Product[] }>>('/products?per_page=100', {
                         cacheTtlMs: 30000,
                     }),
                     apiGet<ApiResponse<string[]>>('/hero-images', {
@@ -94,8 +119,12 @@ export default function Home() {
 
                 const featured = allProducts.filter((p) => p.is_featured).slice(0, 8);
                 const deals = allProducts
-                    .filter((p) => p.discount_price && Number(p.discount_price) < Number(p.price))
-                    .slice(0, 8);
+                    .filter((p) => {
+                        if (!p.discount_price || Number(p.discount_price) >= Number(p.price)) return false;
+                        if (!p.discount_end_at) return true;
+                        const discountEndTime = new Date(p.discount_end_at).getTime();
+                        return !Number.isNaN(discountEndTime) && discountEndTime >= Date.now();
+                    });
 
                 setLatestProducts(latest);
                 setBestSellerProducts(bestSellers);
@@ -116,9 +145,9 @@ export default function Home() {
         fetchData();
     }, []);
 
-    const rotatingDeals = bestDeals.length <= 2
+    const rotatingDeals = bestDeals.length <= BEST_DEALS_VISIBLE
         ? bestDeals
-        : [bestDeals[currentDealsIndex], bestDeals[(currentDealsIndex + 1) % bestDeals.length]];
+        : Array.from({ length: BEST_DEALS_VISIBLE }, (_, idx) => bestDeals[(currentDealsIndex + idx) % bestDeals.length]);
 
     const renderProductSection = (
         title: string,
@@ -168,7 +197,7 @@ export default function Home() {
 
             <main className="flex-grow">
                 {/* Hero Section */}
-                <section className="relative min-h-[52vh] flex items-center justify-center overflow-hidden">
+                <section className="relative min-h-[82vh] md:min-h-[86vh] flex items-center justify-center overflow-hidden pt-24 md:pt-28 pb-24 md:pb-28">
                     {/* Background Image Slider */}
                     <div className="absolute inset-0 z-0">
                         {activeHeroImages.length > 0 ? (
@@ -191,9 +220,9 @@ export default function Home() {
                             <div className="absolute inset-0 bg-gradient-to-br from-dark-900 via-dark-800 to-dark-950" />
                         )}
                         {/* Premium Multi-layer Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-dark-950 via-dark-950/50 to-dark-950/30 z-10" />
-                        <div className="absolute inset-0 bg-gradient-to-r from-dark-950/60 via-transparent to-dark-950/60 z-10" />
-                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,dark-950_100%)] z-10" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-dark-950/55 via-dark-950/30 to-dark-950/18 z-10" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-dark-950/45 via-transparent to-dark-950/45 z-10" />
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_8%,rgba(2,6,23,0.65)_100%)] z-10" />
                     </div>
 
                     {/* Animated Background Elements */}
@@ -203,7 +232,7 @@ export default function Home() {
                     </div>
 
                     <div className="relative z-20 w-full px-4 sm:px-8 lg:px-12">
-                        <div className="flex flex-col items-center justify-center min-h-[calc(52vh-80px)] text-center py-6">
+                        <div className="flex flex-col items-center justify-center min-h-[52vh] md:min-h-[58vh] text-center py-8 md:py-12 pb-24 md:pb-28">
                             {/* Premium Badge */}
                             <div className="inline-flex items-center gap-2 mb-8 animate-fade-in">
                                 <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
@@ -250,72 +279,48 @@ export default function Home() {
                                 )}
                             </div>
 
-                            {/* Trust Indicators */}
-                            <div className="mt-16 flex flex-wrap items-center justify-center gap-8 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-                                <div className="flex items-center gap-2 text-dark-400">
-                                    <div className="flex -space-x-2">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 border-2 border-dark-900" />
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 border-2 border-dark-900" />
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-600 to-dark-900 border-2 border-dark-900" />
-                                    </div>
-                                    <span className="text-sm">500+ Students</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-dark-400">
-                                    <div className="flex items-center gap-1">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <Star key={star} size={16} className="text-yellow-400 fill-yellow-400" />
-                                        ))}
-                                    </div>
-                                    <span className="text-sm">4.9 Rating</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-dark-400">
-                                    <Truck size={18} className="text-primary-400" />
-                                    <span className="text-sm">Free Delivery</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
-                </section>
-
-                {/* Features Section */}
-                <section className="py-12 bg-dark-950 relative -mt-[10vh] z-30">
-                    <div className="w-full px-4 sm:px-8 lg:px-12">
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                            <div className="flex items-center justify-center gap-4">
-                                <div className="w-14 h-14 rounded-full border border-primary-500/50 bg-transparent flex items-center justify-center text-primary-400 transition-all duration-300 group-hover:scale-110">
-                                    <Users size={28} />
+                    {/* Floating Labels Overlay */}
+                    <div className="absolute inset-x-0 bottom-10 md:bottom-14 z-30">
+                        <div className="w-full px-4 sm:px-8 lg:px-12">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                                <div className="flex items-center justify-center gap-4">
+                                    <div className="w-14 h-14 rounded-full border border-primary-500/50 bg-transparent flex items-center justify-center text-primary-400">
+                                        <Users size={26} />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-lg font-bold text-white">500+ Users</h3>
+                                        <p className="text-primary-300 text-xs font-medium">Growing campus community</p>
+                                    </div>
                                 </div>
-                                <div className="text-left">
-                                    <h3 className="text-lg font-bold text-white">500+ Users</h3>
-                                    <p className="text-primary-400 text-xs font-medium">Growing campus community</p>
+                                <div className="flex items-center justify-center gap-4">
+                                    <div className="w-14 h-14 rounded-full border border-primary-500/50 bg-transparent flex items-center justify-center text-primary-400">
+                                        <Truck size={26} />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-lg font-bold text-white">Free Shipping</h3>
+                                        <p className="text-primary-300 text-xs font-medium">Orders over MWK 20k</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-center justify-center gap-4">
-                                <div className="w-14 h-14 rounded-full border border-primary-500/50 bg-transparent flex items-center justify-center text-primary-400 transition-all duration-300 group-hover:scale-110">
-                                    <Truck size={28} />
+                                <div className="flex items-center justify-center gap-4">
+                                    <div className="w-14 h-14 rounded-full border border-primary-500/50 bg-transparent flex items-center justify-center text-primary-400">
+                                        <HelpCircle size={26} />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-lg font-bold text-white">24/7 Support</h3>
+                                        <p className="text-primary-300 text-xs font-medium">Around the clock help</p>
+                                    </div>
                                 </div>
-                                <div className="text-left">
-                                    <h3 className="text-lg font-bold text-white">Free Shipping</h3>
-                                    <p className="text-primary-400 text-xs font-medium">Orders over MWK 20k</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-center gap-4">
-                                <div className="w-14 h-14 rounded-full border border-primary-500/50 bg-transparent flex items-center justify-center text-primary-400 transition-all duration-300 group-hover:scale-110">
-                                    <HelpCircle size={28} />
-                                </div>
-                                <div className="text-left">
-                                    <h3 className="text-lg font-bold text-white">24/7 Support</h3>
-                                    <p className="text-primary-400 text-xs font-medium">Around the clock help</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-center gap-4">
-                                <div className="w-14 h-14 rounded-full border border-primary-500/50 bg-transparent flex items-center justify-center text-primary-400 transition-all duration-300 group-hover:scale-110">
-                                    <ShieldCheck size={28} />
-                                </div>
-                                <div className="text-left">
-                                    <h3 className="text-lg font-bold text-white">Money Back</h3>
-                                    <p className="text-primary-400 text-xs font-medium">Guaranteed refund</p>
+                                <div className="flex items-center justify-center gap-4">
+                                    <div className="w-14 h-14 rounded-full border border-primary-500/50 bg-transparent flex items-center justify-center text-primary-400">
+                                        <ShieldCheck size={26} />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-lg font-bold text-white">Money Back</h3>
+                                        <p className="text-primary-300 text-xs font-medium">Guaranteed refund</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -344,6 +349,7 @@ export default function Home() {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-20 md:grid-rows-2 gap-4 h-auto md:h-[480px]">
                                 {categories.slice(0, 5).map((category, index) => {
+                                    const categoryImageUrl = normalizeCategoryImageUrl(category.image_url);
                                     // New proportions for index-based Layout (20 columns total):
                                     // [Tall 6x2 (0)] [Landscape 9x1 (1)] [Square 5x1 (2)]
                                     // [Tall 6x2 (0)] [Square 5x1 (3)]    [Landscape 9x1 (4)]
@@ -363,19 +369,22 @@ export default function Home() {
                                         >
                                             <div className="absolute inset-0 bg-gradient-to-t from-dark-950/95 via-dark-950/20 to-transparent z-10" />
 
-                                            {category.image_url ? (
+                                            {categoryImageUrl ? (
                                                 <img
-                                                    src={category.image_url}
+                                                    src={categoryImageUrl}
                                                     alt={category.name}
+                                                    onError={(event) => {
+                                                        event.currentTarget.onerror = null;
+                                                        event.currentTarget.src = CATEGORY_PLACEHOLDER_IMAGE;
+                                                    }}
                                                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out opacity-60 group-hover:opacity-100"
                                                 />
                                             ) : (
-                                                <div className="absolute inset-0 bg-dark-800 flex items-center justify-center text-7xl text-dark-700/30 select-none group-hover:scale-110 transition-transform duration-700 group-hover:text-primary-500/10">
-                                                    {category.name.toLowerCase().includes('food') ? '🍔' :
-                                                        category.name.toLowerCase().includes('drink') ? '🥤' :
-                                                            category.name.toLowerCase().includes('tech') ? '💻' :
-                                                                category.name.toLowerCase().includes('stationery') ? '✏️' : '📦'}
-                                                </div>
+                                                <img
+                                                    src={CATEGORY_PLACEHOLDER_IMAGE}
+                                                    alt={`${category.name} placeholder`}
+                                                    className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:scale-110 transition-transform duration-700 ease-in-out"
+                                                />
                                             )}
 
                                             <div className="absolute inset-0 z-20 p-6 flex flex-col justify-end">
@@ -434,7 +443,7 @@ export default function Home() {
                                     <span className="text-xs uppercase tracking-[0.2em] font-semibold">Auto Rotates Every 5 Seconds</span>
                                 </div>
                                 <h2 className="text-3xl font-bold text-red-100">Best Deals</h2>
-                                <p className="text-red-200/80 mt-2">Two deal cards per view with rotating picks.</p>
+                                <p className="text-red-200/80 mt-2">Three deal cards per view with rotating picks.</p>
                             </div>
                             <Link href="/products?sort=price_asc" className="px-5 py-2 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-400 text-white transition-colors">
                                 View All Deals
@@ -442,17 +451,28 @@ export default function Home() {
                         </div>
 
                         {loading ? (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {[1, 2].map((item) => (
-                                    <div key={item} className="skeleton rounded-2xl h-[220px]" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                {[1, 2, 3].map((item) => (
+                                    <div key={item} className="skeleton rounded-2xl h-[340px]" />
                                 ))}
                             </div>
                         ) : rotatingDeals.length > 0 ? (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 transition-all duration-700" key={`${currentDealsIndex}-${rotatingDeals.map((deal) => deal.id).join('-')}`}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 transition-all duration-700" key={`${currentDealsIndex}-${rotatingDeals.map((deal) => deal.id).join('-')}`}>
                                 {rotatingDeals.map((product) => {
                                     const salePrice = Number(product.discount_price ?? product.price);
                                     const originalPrice = Number(product.price);
                                     const discountPercent = Math.max(0, Math.round(((originalPrice - salePrice) / originalPrice) * 100));
+                                    const discountEndsAt = product.discount_end_at
+                                        ? new Date(product.discount_end_at)
+                                        : null;
+                                    const hasValidDiscountEnd = discountEndsAt && !Number.isNaN(discountEndsAt.getTime());
+                                    const discountEndsText = hasValidDiscountEnd
+                                        ? discountEndsAt.toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                        })
+                                        : null;
 
                                     return (
                                         <Link
@@ -461,21 +481,26 @@ export default function Home() {
                                             className="group relative overflow-hidden rounded-2xl border border-red-500/40 bg-gradient-to-br from-red-950/80 to-dark-900 hover:border-red-300/80 transition-all duration-300 hover:shadow-[0_0_35px_rgba(239,68,68,0.35)]"
                                         >
                                             <div className="absolute inset-0 bg-gradient-to-r from-red-700/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <div className="relative flex flex-col md:flex-row min-h-[220px]">
-                                                <div className="md:w-2/5 bg-dark-900/60">
+                                            <div className="relative flex flex-col min-h-[340px]">
+                                                <div className="bg-dark-900/60 h-[180px]">
                                                     {product.image_url ? (
-                                                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover md:min-h-[220px]" />
+                                                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <div className="w-full h-full min-h-[220px] flex items-center justify-center text-5xl">🏷️</div>
+                                                        <div className="w-full h-full flex items-center justify-center text-5xl">🏷️</div>
                                                     )}
                                                 </div>
-                                                <div className="md:w-3/5 p-6 flex flex-col justify-between">
+                                                <div className="p-6 flex flex-col justify-between flex-1">
                                                     <div>
                                                         <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-red-500 text-white text-xs font-bold mb-3">
                                                             {discountPercent}% OFF
                                                         </span>
                                                         <h3 className="text-xl font-bold text-red-50 mb-2 line-clamp-2">{product.name}</h3>
                                                         <p className="text-red-100/70 text-sm line-clamp-2">{product.description || 'Limited-time offer on this product.'}</p>
+                                                        {discountEndsText && (
+                                                            <p className="text-xs text-red-200/80 mt-3">
+                                                                Ends: {discountEndsText}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                     <div className="mt-5 flex items-end justify-between gap-4">
                                                         <div className="flex flex-col">

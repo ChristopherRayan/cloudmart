@@ -5,6 +5,16 @@ import api, { apiGet } from '@/lib/api';
 import { ApiResponse, Product } from '@/types';
 import toast from 'react-hot-toast';
 
+function toLocalDateTimeValue(value: string | null | undefined): string {
+    if (!value) return '';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const pad = (num: number) => String(num).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 export default function AdminProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -14,7 +24,7 @@ export default function AdminProductsPage() {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [formData, setFormData] = useState({
-        name: '', description: '', price: '', discount_price: '', stock_quantity: '', category_id: '', image_url: '', is_active: true, is_featured: false
+        name: '', description: '', price: '', discount_price: '', discount_end_at: '', stock_quantity: '', category_id: '', image_url: '', is_active: true, is_featured: false
     });
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -48,6 +58,7 @@ export default function AdminProductsPage() {
                 description: product.description || '',
                 price: product.price.toString(),
                 discount_price: product.discount_price ? product.discount_price.toString() : '',
+                discount_end_at: toLocalDateTimeValue(product.discount_end_at),
                 stock_quantity: product.stock_quantity.toString(),
                 category_id: product.category_id.toString(),
                 image_url: product.image_url || '',
@@ -57,7 +68,7 @@ export default function AdminProductsPage() {
         } else {
             setEditingProduct(null);
             setFormData({
-                name: '', description: '', price: '', discount_price: '', stock_quantity: '',
+                name: '', description: '', price: '', discount_price: '', discount_end_at: '', stock_quantity: '',
                 category_id: categories[0]?.id?.toString() || '', image_url: '', is_active: true, is_featured: false
             });
             setSelectedImage(null);
@@ -71,10 +82,14 @@ export default function AdminProductsPage() {
         setLoading(true);
         try {
             const slug = formData.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+            const hasDiscount = Boolean(formData.discount_price && Number(formData.discount_price) > 0);
             const payload = {
                 ...formData,
                 price: parseFloat(formData.price),
-                discount_price: formData.discount_price ? parseFloat(formData.discount_price) : null,
+                discount_price: hasDiscount ? parseFloat(formData.discount_price) : null,
+                discount_end_at: hasDiscount && formData.discount_end_at
+                    ? new Date(formData.discount_end_at).toISOString()
+                    : null,
                 stock_quantity: parseInt(formData.stock_quantity),
                 category_id: parseInt(formData.category_id),
                 slug,
@@ -295,7 +310,11 @@ export default function AdminProductsPage() {
                                     <input
                                         type="number"
                                         value={formData.discount_price}
-                                        onChange={e => setFormData({ ...formData, discount_price: e.target.value })}
+                                        onChange={e => setFormData({
+                                            ...formData,
+                                            discount_price: e.target.value,
+                                            discount_end_at: e.target.value ? formData.discount_end_at : '',
+                                        })}
                                         className="input-field"
                                         min="0"
                                         step="0.01"
@@ -308,8 +327,16 @@ export default function AdminProductsPage() {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
-                                    <label className="label">Stock Quantity</label>
-                                    <input type="number" value={formData.stock_quantity} onChange={e => setFormData({ ...formData, stock_quantity: e.target.value })} className="input-field" min="0" required />
+                                    <label className="label">Discount End Date</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={formData.discount_end_at}
+                                        onChange={e => setFormData({ ...formData, discount_end_at: e.target.value })}
+                                        className="input-field"
+                                        disabled={!formData.discount_price}
+                                        required={Boolean(formData.discount_price)}
+                                    />
+                                    <p className="text-xs text-dark-500 mt-1">Required when a discount price is set.</p>
                                 </div>
                                 <div className="flex items-center gap-3 pt-6">
                                     <label className="relative inline-flex items-center cursor-pointer">
@@ -323,6 +350,13 @@ export default function AdminProductsPage() {
                                         <span className="ml-3 text-sm font-medium text-dark-200">Featured Product</span>
                                     </label>
                                 </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label className="label">Stock Quantity</label>
+                                    <input type="number" value={formData.stock_quantity} onChange={e => setFormData({ ...formData, stock_quantity: e.target.value })} className="input-field" min="0" required />
+                                </div>
+                                <div />
                             </div>
                             <div>
                                 <label className="label">Product Image</label>

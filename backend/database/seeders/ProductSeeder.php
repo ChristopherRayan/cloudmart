@@ -345,8 +345,34 @@ class ProductSeeder extends Seeder
             ],
         ];
 
+        $createdProducts = [];
+
         foreach ($products as $product) {
-            Product::create($product);
+            $createdProducts[] = Product::create($product);
+        }
+
+        // Seed showcase data for homepage sections:
+        // - 7 featured products
+        // - 5 discounted products ("Best Deals") with an expiry date
+        $featuredIds = collect($createdProducts)
+            ->take(7)
+            ->pluck('id');
+
+        Product::whereIn('id', $featuredIds)->update([
+            'is_featured' => true,
+        ]);
+
+        $dealProducts = collect($createdProducts)
+            ->slice(7, 5);
+
+        foreach ($dealProducts as $dealProduct) {
+            $price = (float) $dealProduct->price;
+            $discountPrice = round($price * 0.85, 2);
+
+            $dealProduct->update([
+                'discount_price' => $discountPrice,
+                'discount_end_at' => now()->addDays(30),
+            ]);
         }
     }
 }

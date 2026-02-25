@@ -98,10 +98,12 @@ export default function Header() {
         router.push('/login');
     };
 
+    const isHomePage = pathname === '/';
+
     return (
-        <header className="sticky top-0 z-50 glass border-b border-dark-700/50">
+        <header className={isHomePage ? 'fixed inset-x-0 top-0 z-50 bg-transparent' : 'sticky top-0 z-50 glass border-b border-dark-700/50'}>
             <div className="w-full px-4 sm:px-8 lg:px-12">
-                <div className="flex items-center justify-between h-16">
+                <div className={`flex items-center justify-between h-16 ${isHomePage ? 'mt-2 sm:mt-3' : ''}`}>
                     {/* Logo */}
                     <Link href="/" className="flex items-center space-x-2">
                         <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
@@ -112,7 +114,7 @@ export default function Header() {
 
                     {/* Desktop Nav */}
                     <nav className="hidden md:flex items-center space-x-6">
-                        <Link href="/products" className="text-dark-300 hover:text-primary-400 transition-colors text-sm font-medium">
+                        <Link href="/products" className={`transition-colors text-sm font-medium ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-300 hover:text-primary-400'}`}>
                             Products
                         </Link>
                     </nav>
@@ -137,7 +139,7 @@ export default function Header() {
                                 <div className="relative" ref={notificationsRef}>
                                     <button
                                         onClick={() => setNotificationsOpen(!notificationsOpen)}
-                                        className="relative p-2 text-dark-300 hover:text-primary-400 transition-colors"
+                                        className={`relative p-2 transition-colors ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-300 hover:text-primary-400'}`}
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -181,7 +183,7 @@ export default function Header() {
 
                                 {/* Cart - Hidden for admin users */}
                                 {!hasRole('admin') && (
-                                    <Link href="/cart" className="relative p-2 text-dark-300 hover:text-primary-400 transition-colors">
+                                    <Link href="/cart" className={`relative p-2 transition-colors ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-300 hover:text-primary-400'}`}>
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
                                         </svg>
@@ -197,7 +199,7 @@ export default function Header() {
                                 <div className="relative" ref={profileMenuRef}>
                                     <button
                                         onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                                        className="flex items-center space-x-2 p-1 rounded-full border border-dark-700/50 bg-dark-800/50 hover:bg-dark-700/50 transition-all duration-300 group"
+                                        className={`flex items-center space-x-2 p-1 rounded-full transition-all duration-300 group ${isHomePage ? 'border border-white/25 bg-white/10 hover:bg-white/15' : 'border border-dark-700/50 bg-dark-800/50 hover:bg-dark-700/50'}`}
                                     >
                                         <div className="w-8 h-8 rounded-full overflow-hidden border border-primary-500/50 group-hover:border-primary-400 transition-colors">
                                             {user?.profile_image_url ? (
@@ -208,10 +210,10 @@ export default function Header() {
                                                 </div>
                                             )}
                                         </div>
-                                        <span className="hidden sm:block text-sm font-medium pr-2 text-dark-200 group-hover:text-primary-400 transition-colors">
+                                        <span className={`hidden sm:block text-sm font-medium pr-2 transition-colors ${isHomePage ? 'text-white/90 group-hover:text-white' : 'text-dark-200 group-hover:text-primary-400'}`}>
                                             {user?.name?.split(' ')[0]}
                                         </span>
-                                        <svg className={`w-4 h-4 text-dark-400 group-hover:text-primary-400 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg className={`w-4 h-4 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''} ${isHomePage ? 'text-white/70 group-hover:text-white' : 'text-dark-400 group-hover:text-primary-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                         </svg>
                                     </button>
@@ -284,7 +286,7 @@ export default function Header() {
                             </>
                         ) : (
                             <div className="flex items-center space-x-3">
-                                <Link href="/login" className="text-dark-300 hover:text-primary-400 text-sm font-medium transition-colors p-2">
+                                <Link href="/login" className={`text-sm font-medium transition-colors p-2 ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-300 hover:text-primary-400'}`}>
                                     Sign In
                                 </Link>
                                 <Link href="/register" className="btn-primary text-sm py-2 px-5">
@@ -296,7 +298,7 @@ export default function Header() {
                         {/* Mobile menu toggle */}
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="md:hidden p-2 text-dark-300 hover:text-primary-400 transition-colors"
+                            className={`md:hidden p-2 transition-colors ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-300 hover:text-primary-400'}`}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
@@ -307,31 +309,31 @@ export default function Header() {
 
                 {/* Mobile Menu Panel */}
                 {mobileMenuOpen && (
-                    <div className="md:hidden glass border-t border-dark-700/50 py-4 px-4 space-y-4 animate-fade-in">
-                        <Link href="/products" className="block text-dark-200 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>
+                    <div className={`md:hidden py-4 px-4 space-y-4 animate-fade-in ${isHomePage ? 'mt-2 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-2xl backdrop-saturate-150' : 'glass border-t border-dark-700/50'}`}>
+                        <Link href="/products" className={`block font-medium py-2 ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-200'}`} onClick={() => setMobileMenuOpen(false)}>
                             Products
                         </Link>
                         {isAuthenticated && (
                             <>
                                 {hasRole('delivery_staff') && (
-                                    <Link href="/delivery/dashboard" className="block text-dark-200 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>
+                                    <Link href="/delivery/dashboard" className={`block font-medium py-2 ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-200'}`} onClick={() => setMobileMenuOpen(false)}>
                                         Deliveries
                                     </Link>
                                 )}
                                 {hasRole('admin') && (
-                                    <Link href="/admin" className="block text-dark-200 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>
+                                    <Link href="/admin" className={`block font-medium py-2 ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-200'}`} onClick={() => setMobileMenuOpen(false)}>
                                         Admin Dashboard
                                     </Link>
                                 )}
-                                <Link href="/profile" className="block text-dark-200 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>
+                                <Link href="/profile" className={`block font-medium py-2 ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-200'}`} onClick={() => setMobileMenuOpen(false)}>
                                     Profile Settings
                                 </Link>
                                 {!hasRole('delivery_staff') && !hasRole('admin') && (
-                                    <Link href="/orders" className="block text-dark-200 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>
+                                    <Link href="/orders" className={`block font-medium py-2 ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-200'}`} onClick={() => setMobileMenuOpen(false)}>
                                         My Orders
                                     </Link>
                                 )}
-                                <Link href="/report" className="block text-dark-200 font-medium py-2" onClick={() => setMobileMenuOpen(false)}>
+                                <Link href="/report" className={`block font-medium py-2 ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-200'}`} onClick={() => setMobileMenuOpen(false)}>
                                     Report Issue
                                 </Link>
                                 <button onClick={handleSignOut} className="block w-full text-left text-red-400 font-medium py-2">

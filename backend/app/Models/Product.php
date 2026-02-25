@@ -16,6 +16,7 @@ class Product extends Model
         'description',
         'price',
         'discount_price',
+        'discount_end_at',
         'stock_quantity',
         'image_url',
         'is_active',
@@ -25,6 +26,7 @@ class Product extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'discount_price' => 'decimal:2',
+        'discount_end_at' => 'datetime',
         'stock_quantity' => 'integer',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',

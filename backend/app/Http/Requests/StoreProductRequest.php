@@ -20,6 +20,7 @@ class StoreProductRequest extends FormRequest
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0|lt:price',
+            'discount_end_at' => 'nullable|date|required_with:discount_price',
             'stock_quantity' => 'required|integer|min:0',
             'image_url' => 'nullable|string|max:500',
             'is_active' => 'boolean',

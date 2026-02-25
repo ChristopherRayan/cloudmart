@@ -5,12 +5,25 @@ import api, { apiGet } from '@/lib/api';
 import { ApiResponse, Category } from '@/types';
 import toast from 'react-hot-toast';
 
+const CATEGORY_PLACEHOLDER_IMAGE = '/images/category-placeholder.svg';
+
 function normalizeCategoryImageUrl(imageUrl: string | null | undefined): string | null {
     if (!imageUrl) return null;
 
     const trimmed = imageUrl.trim();
     if (!trimmed) return null;
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) return trimmed;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        try {
+            const parsed = new URL(trimmed);
+            if (parsed.pathname.startsWith('/storage/')) {
+                return parsed.pathname;
+            }
+        } catch {
+            return trimmed;
+        }
+        return trimmed;
+    }
+    if (trimmed.startsWith('data:')) return trimmed;
     if (trimmed.startsWith('/')) return trimmed;
     if (trimmed.startsWith('storage/')) return `/${trimmed}`;
 
@@ -50,7 +63,10 @@ export default function AdminCategoriesPage() {
     const fetchCategories = async () => {
         setLoading(true);
         try {
-            const res = await apiGet<ApiResponse<Category[]>>('/categories', { cacheTtlMs: 300000 });
+            const res = await apiGet<ApiResponse<Category[]>>('/categories', {
+                cacheTtlMs: 0,
+                forceRefresh: true,
+            });
             setCategories((res.data.data || []).map(normalizeCategoryData));
         } catch (err) {
             console.error(err);
@@ -112,6 +128,11 @@ export default function AdminCategoriesPage() {
             // Upload image if selected
             if (selectedImage && categoryId) {
                 await uploadCategoryImage(categoryId);
+            }
+
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('product_categories');
+                localStorage.removeItem('product_categories_ts');
             }
 
             setIsCategoryModalOpen(false);
@@ -216,9 +237,21 @@ export default function AdminCategoriesPage() {
                     <div key={category.id} className="card group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/10 hover:-translate-y-1">
                         <div className="aspect-video bg-dark-800 relative overflow-hidden">
                             {categoryImageUrl ? (
-                                <img src={categoryImageUrl} alt={category.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <img
+                                    src={categoryImageUrl}
+                                    alt={category.name}
+                                    onError={(event) => {
+                                        event.currentTarget.onerror = null;
+                                        event.currentTarget.src = CATEGORY_PLACEHOLDER_IMAGE;
+                                    }}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-4xl">📁</div>
+                                <img
+                                    src={CATEGORY_PLACEHOLDER_IMAGE}
+                                    alt={`${category.name} placeholder`}
+                                    className="w-full h-full object-cover opacity-75 group-hover:scale-105 transition-transform duration-500"
+                                />
                             )}
                             <div className="absolute top-2 right-2">
                                 <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${category.is_active ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>

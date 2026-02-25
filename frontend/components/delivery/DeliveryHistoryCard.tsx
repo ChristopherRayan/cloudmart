@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Delivery } from '@/types';
-import { format } from 'date-fns';
 
 interface DeliveryHistoryCardProps {
     delivery: Delivery;
@@ -13,7 +12,16 @@ export default function DeliveryHistoryCard({ delivery }: DeliveryHistoryCardPro
 
     const formatDate = (dateString: string | undefined) => {
         if (!dateString) return 'N/A';
-        return format(new Date(dateString), 'MMM dd, yyyy h:mm a');
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return 'N/A';
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+        });
     };
 
     return (
