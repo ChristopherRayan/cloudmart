@@ -19,6 +19,53 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function normalizeStorageUrl(url: string | null | undefined, defaultDirectory?: string): string | undefined {
+    if (!url) return undefined;
+
+    const trimmed = url.trim();
+    if (!trimmed) return undefined;
+
+    if (trimmed.startsWith('data:')) {
+        return trimmed;
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        try {
+            const parsed = new URL(trimmed);
+            if (parsed.pathname.startsWith('/storage/')) {
+                return parsed.pathname;
+            }
+            return trimmed;
+        } catch {
+            return undefined;
+        }
+    }
+
+    if (trimmed.startsWith('/storage/')) return trimmed;
+    if (trimmed.startsWith('storage/')) return `/${trimmed}`;
+
+    if (trimmed.includes('/')) {
+        return `/storage/${trimmed.replace(/^\/+/, '')}`;
+    }
+
+    if (defaultDirectory) {
+        return `/storage/${defaultDirectory}/${trimmed.replace(/^\/+/, '')}`;
+    }
+
+    return undefined;
+}
+
+function normalizeUserPayload(userData: User): User {
+    const normalizedImageUrl =
+        normalizeStorageUrl(userData.profile_image_url, 'profile_images') ??
+        normalizeStorageUrl(userData.profile_image, 'profile_images');
+
+    return {
+        ...userData,
+        profile_image_url: normalizedImageUrl,
+    };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
@@ -30,8 +77,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (storedToken && storedUser) {
             try {
+                const parsedUser = normalizeUserPayload(JSON.parse(storedUser));
                 setToken(storedToken);
-                setUser(JSON.parse(storedUser));
+                setUser(parsedUser);
+                localStorage.setItem('user', JSON.stringify(parsedUser));
             } catch (e) {
                 console.error('Failed to parse stored user', e);
                 localStorage.removeItem('token');
@@ -44,7 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = useCallback(async (email: string, password: string) => {
         const response = await api.post<ApiResponse<{ user: User; token: string }>>('/login', { email, password });
 
-        const { user: userData, token: authToken } = response.data.data;
+        const { user: rawUserData, token: authToken } = response.data.data;
+        const userData = normalizeUserPayload(rawUserData);
+
         setUser(userData);
         setToken(authToken);
         localStorage.setItem('token', authToken);
@@ -61,7 +112,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             password_confirmation: passwordConfirmation,
         });
 
-        const { user: userData, token: authToken } = response.data.data;
+        const { user: rawUserData, token: authToken } = response.data.data;
+        const userData = normalizeUserPayload(rawUserData);
+
         setUser(userData);
         setToken(authToken);
         localStorage.setItem('token', authToken);
@@ -88,16 +141,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const refreshUser = useCallback(async () => {
         try {
             const response = await apiGet<ApiResponse<User>>('/user');
-            setUser(response.data.data);
-            localStorage.setItem('user', JSON.stringify(response.data.data));
+            const userData = normalizeUserPayload(response.data.data);
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
         } catch (error) {
             console.error('Failed to refresh user data', error);
         }
     }, []);
 
     const updateUser = useCallback((userData: User) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+        const normalized = normalizeUserPayload(userData);
+        setUser(normalized);
+        localStorage.setItem('user', JSON.stringify(normalized));
     }, []);
 
     return (

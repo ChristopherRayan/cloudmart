@@ -16,7 +16,8 @@ export default function ProductDetail() {
     const params = useParams();
     const id = params.id;
     const { addItem } = useCart();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, hasRole } = useAuth();
+    const isPurchaseRestricted = hasRole('admin') || hasRole('delivery_staff');
 
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
@@ -41,6 +42,10 @@ export default function ProductDetail() {
     }, [id]);
 
     const handleAddToCart = async () => {
+        if (isPurchaseRestricted) {
+            toast.error('This account type cannot place orders.');
+            return;
+        }
         if (!isAuthenticated) {
             toast.error('Please sign in to add items to cart');
             return;
@@ -125,41 +130,49 @@ export default function ProductDetail() {
                         </div>
 
                         <div className="mt-auto border-t border-dark-700 pt-6">
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="flex items-center bg-dark-800 rounded-xl border border-dark-600">
-                                    <button
-                                        onClick={() => setQty(Math.max(1, qty - 1))}
-                                        className="w-10 h-10 flex items-center justify-center text-dark-300 hover:text-white transition-colors"
-                                    >
-                                        -
-                                    </button>
-                                    <span className="w-10 text-center font-medium text-dark-100">{qty}</span>
-                                    <button
-                                        onClick={() => setQty(Math.min(product.stock_quantity, qty + 1))}
-                                        disabled={qty >= product.stock_quantity}
-                                        className="w-10 h-10 flex items-center justify-center text-dark-300 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                                    >
-                                        +
-                                    </button>
-                                </div>
-                                <div className="text-sm text-dark-400">
-                                    {product.stock_quantity > 0 ? (
-                                        <span className="text-primary-400">In Stock</span>
-                                    ) : (
-                                        <span className="text-red-400">Out of Stock</span>
-                                    )}
-                                </div>
-                            </div>
+                            {!isPurchaseRestricted ? (
+                                <>
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="flex items-center bg-dark-800 rounded-xl border border-dark-600">
+                                            <button
+                                                onClick={() => setQty(Math.max(1, qty - 1))}
+                                                className="w-10 h-10 flex items-center justify-center text-dark-300 hover:text-white transition-colors"
+                                            >
+                                                -
+                                            </button>
+                                            <span className="w-10 text-center font-medium text-dark-100">{qty}</span>
+                                            <button
+                                                onClick={() => setQty(Math.min(product.stock_quantity, qty + 1))}
+                                                disabled={qty >= product.stock_quantity}
+                                                className="w-10 h-10 flex items-center justify-center text-dark-300 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                        <div className="text-sm text-dark-400">
+                                            {product.stock_quantity > 0 ? (
+                                                <span className="text-primary-400">In Stock</span>
+                                            ) : (
+                                                <span className="text-red-400">Out of Stock</span>
+                                            )}
+                                        </div>
+                                    </div>
 
-                            <div className="flex gap-4">
-                                <button
-                                    onClick={handleAddToCart}
-                                    disabled={adding || product.stock_quantity === 0 || !product.is_active}
-                                    className="btn-primary flex-1 text-lg py-3"
-                                >
-                                    {adding ? 'Adding...' : product.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
-                                </button>
-                            </div>
+                                    <div className="flex gap-4">
+                                        <button
+                                            onClick={handleAddToCart}
+                                            disabled={adding || product.stock_quantity === 0 || !product.is_active}
+                                            className="btn-primary flex-1 text-lg py-3"
+                                        >
+                                            {adding ? 'Adding...' : product.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="rounded-xl border border-primary-500/25 bg-primary-500/10 px-4 py-3 text-sm text-primary-300">
+                                    Ordering is only available for customer accounts.
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

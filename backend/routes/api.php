@@ -69,7 +69,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 });
 
 /* |-------------------------------------------------------------------------- | Cart Routes |-------------------------------------------------------------------------- */
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'role:customer'])->group(function () {
     Route::get('/cart', [CartController::class , 'index']);
     Route::post('/cart/items', [CartController::class , 'addItem']);
     Route::put('/cart/items/{id}', [CartController::class , 'updateItem']);

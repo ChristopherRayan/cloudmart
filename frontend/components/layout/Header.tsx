@@ -21,6 +21,7 @@ export default function Header() {
     const profileMenuRef = useRef<HTMLDivElement>(null);
     const notificationsRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+    const avatarFallbackDataUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231f2937'/%3E%3Ccircle cx='32' cy='24' r='10' fill='%23d1d5db'/%3E%3Cpath d='M14 54c2-9 10-14 18-14s16 5 18 14' fill='%23d1d5db'/%3E%3C/svg%3E";
 
     // Fetch notifications
     useEffect(() => {
@@ -181,8 +182,8 @@ export default function Header() {
                                     )}
                                 </div>
 
-                                {/* Cart - Hidden for admin users */}
-                                {!hasRole('admin') && (
+                                {/* Cart - Hidden for non-customer staff roles */}
+                                {!hasRole('admin') && !hasRole('delivery_staff') && (
                                     <Link href="/cart" className={`relative p-2 transition-colors ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-300 hover:text-primary-400'}`}>
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
@@ -203,7 +204,17 @@ export default function Header() {
                                     >
                                         <div className="w-8 h-8 rounded-full overflow-hidden border border-primary-500/50 group-hover:border-primary-400 transition-colors">
                                             {user?.profile_image_url ? (
-                                                <img src={user.profile_image_url} alt="Avatar" className="w-full h-full object-cover" />
+                                                <img
+                                                    src={user.profile_image_url}
+                                                    alt="Avatar"
+                                                    className="w-full h-full object-cover"
+                                                    onError={(event) => {
+                                                        const target = event.currentTarget;
+                                                        if (target.src !== avatarFallbackDataUrl) {
+                                                            target.src = avatarFallbackDataUrl;
+                                                        }
+                                                    }}
+                                                />
                                             ) : (
                                                 <div className="w-full h-full bg-gradient-to-br from-primary-600 to-accent-600 flex items-center justify-center">
                                                     <span className="text-white text-xs font-bold">{user?.name?.charAt(0)}</span>

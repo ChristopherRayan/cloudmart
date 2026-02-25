@@ -31,7 +31,8 @@ function normalizeDeliveryLocations(data: unknown): DeliveryLocationOption[] {
 export default function CheckoutPage() {
     const router = useRouter();
     const { cart, totalAmount, refreshCart } = useCart();
-    const { user } = useAuth();
+    const { user, isAuthenticated, hasRole } = useAuth();
+    const isPurchaseRestricted = hasRole('admin') || hasRole('delivery_staff');
     const { coords, error: geoError, loading: geoLoading, requestLocation } = useGeolocation();
 
     const [deliveryLocations, setDeliveryLocations] = useState<DeliveryLocationOption[]>([]);
@@ -99,6 +100,10 @@ export default function CheckoutPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isPurchaseRestricted) {
+            toast.error('This account type cannot place orders.');
+            return;
+        }
         if (!selectedLocationId) {
             toast.error('Please select a delivery location');
             return;
@@ -126,6 +131,38 @@ export default function CheckoutPage() {
             setIsSubmitting(false);
         }
     };
+
+    if (!isAuthenticated) {
+        return (
+            <div className="min-h-screen flex flex-col bg-dark-950">
+                <Header />
+                <main className="flex-grow flex items-center justify-center">
+                    <div className="text-center card max-w-md w-full">
+                        <p className="text-dark-400 mb-4">Sign in to continue checkout.</p>
+                        <button onClick={() => router.push('/login')} className="btn-primary">Sign In</button>
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
+
+    if (isPurchaseRestricted) {
+        return (
+            <div className="min-h-screen flex flex-col bg-dark-950">
+                <Header />
+                <main className="flex-grow flex items-center justify-center">
+                    <div className="text-center card max-w-md w-full">
+                        <h2 className="text-2xl font-bold text-dark-100 mb-3">Checkout Not Available</h2>
+                        <p className="text-dark-400">
+                            Admin and delivery staff accounts cannot complete purchases.
+                        </p>
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
 
     if (!cart || cart.items.length === 0) {
         return (

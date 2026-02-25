@@ -131,7 +131,12 @@ export default function ProfileSettingsPage() {
                         <div className="relative w-40 h-40 mb-6 group">
                             <div className="w-full h-full rounded-full overflow-hidden border-4 border-primary-500/20 shadow-xl">
                                 {previewImage ? (
-                                    <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                                    <img
+                                        src={previewImage}
+                                        alt="Profile"
+                                        className="w-full h-full object-cover"
+                                        onError={() => setPreviewImage(null)}
+                                    />
                                 ) : (
                                     <div className="w-full h-full bg-dark-700 flex items-center justify-center">
                                         <span className="text-4xl text-dark-400 font-bold">{user?.name?.charAt(0)}</span>

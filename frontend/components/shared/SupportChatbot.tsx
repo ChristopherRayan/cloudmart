@@ -2,24 +2,144 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { MessageSquare, X, Home, ShoppingBag, ShoppingCart, Package, User, Bot, HelpCircle } from 'lucide-react';
+import {
+    MessageSquare,
+    X,
+    Home,
+    ShoppingBag,
+    ShoppingCart,
+    Package,
+    User,
+    Bot,
+    HelpCircle,
+    Truck,
+    ShieldCheck,
+    CheckCircle2,
+    ClipboardList,
+    KeyRound,
+    Route,
+    FileText,
+    CreditCard,
+    LogIn,
+    UserPlus,
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SupportChatbot() {
     const [isOpen, setIsOpen] = useState(false);
+    const { user, isAuthenticated, hasRole } = useAuth();
+    const isAdmin = hasRole('admin');
+    const isDeliveryStaff = hasRole('delivery_staff');
+    const isGuest = !isAuthenticated;
+    const isCustomer = isAuthenticated && !isAdmin && !isDeliveryStaff;
+    const roleGuideLabel = isAdmin
+        ? 'Admin Guide'
+        : isDeliveryStaff
+            ? 'Delivery Staff Guide'
+            : isCustomer
+                ? 'Customer Guide'
+                : 'New User Guide';
 
     const shortcuts = [
         { name: 'Home', path: '/', icon: <Home size={18} /> },
         { name: 'Products', path: '/products', icon: <ShoppingBag size={18} /> },
         { name: 'My Cart', path: '/cart', icon: <ShoppingCart size={18} /> },
-        { name: 'My Orders', path: '/profile', icon: <Package size={18} /> },
+        { name: 'My Orders', path: '/orders', icon: <Package size={18} /> },
         { name: 'Account settings', path: '/profile', icon: <User size={18} /> },
+        { name: 'Report Issue', path: '/report', icon: <HelpCircle size={18} /> },
+    ];
+
+    if (isGuest) {
+        shortcuts.unshift(
+            { name: 'Sign In', path: '/login', icon: <LogIn size={18} /> },
+            { name: 'Create Account', path: '/register', icon: <UserPlus size={18} /> }
+        );
+    }
+
+    if (isDeliveryStaff) {
+        shortcuts.unshift({ name: 'Delivery Dashboard', path: '/delivery/dashboard', icon: <Truck size={18} /> });
+    }
+
+    if (isAdmin) {
+        shortcuts.unshift({ name: 'Admin Dashboard', path: '/admin', icon: <ShieldCheck size={18} /> });
+    }
+
+    const onboardingGuide = [
+        'Create an account or sign in from the Login page.',
+        'After login, use Home and Products to start shopping.',
+        'Open your profile page and complete phone/address details.',
+        'Use My Cart and My Orders to manage purchases.',
+        'Use Report Issue anytime if you need admin support.',
+    ];
+
+    const customerGuide = [
+        'Go to Products and browse categories, search, or sorting options.',
+        'Open a product, confirm stock, then click Add to cart.',
+        'Open Cart, adjust quantity, and review totals.',
+        'Proceed to checkout and select an admin-configured delivery location.',
+        'Place your order and track status updates in My Orders.',
+        'Open an order detail page to view invoice and delivery code/token.',
+    ];
+
+    const checkoutGuide = [
+        'Sign in first. Guests cannot complete checkout.',
+        'Ensure every cart item is in stock.',
+        'Choose a valid delivery location from the dropdown.',
+        'Confirm your contact details before placing the order.',
+        'After success, keep your order ID and 4-digit delivery code.',
+    ];
+
+    const orderTrackingGuide = [
+        'pending: order created and waiting for processing.',
+        'assigned: admin has assigned delivery staff to your order.',
+        'out_for_delivery: rider is on the way to your location.',
+        'delivered: order was confirmed with your delivery code.',
+    ];
+
+    const deliveryTokenGuide = [
+        'Your delivery token is the 4-digit delivery code shown in order details.',
+        'Only share this code when the correct delivery staff arrives.',
+        'Delivery staff must enter this exact code to complete delivery.',
+        'If code is wrong, delivery cannot be marked as delivered.',
+        'Do not share the code in advance through unsafe channels.',
+    ];
+
+    const invoiceGuide = [
+        'After checkout, open My Orders and select an order.',
+        'Review line items, totals, location, and status timeline.',
+        'Use the invoice action to download or print the receipt PDF.',
+        'Keep invoices for payment proof and support follow-up.',
+    ];
+
+    const deliveryGuide = [
+        'Open Delivery Dashboard and review assigned orders only.',
+        'Mark order as out_for_delivery before leaving pickup.',
+        'At customer handover, ask for the exact 4-digit delivery code from their order.',
+        'Enter the code in delivery confirmation. Only exact code matches are accepted.',
+        'Once verified, status moves to delivered with timestamp and staff audit trail.',
+    ];
+
+    const adminGuide = [
+        'Create categories and products with valid images.',
+        'Configure delivery locations and keep them active.',
+        'Assign orders to delivery staff quickly from admin orders.',
+        'Monitor analytics, reports, and audit logs daily.',
+        'Update order status when assigned, out_for_delivery, and delivered.',
+    ];
+
+    const troubleshootingGuide = [
+        'If pages break after updates, hard refresh: Ctrl+Shift+R.',
+        'If images fail, re-open profile/product and upload image again.',
+        'If checkout returns 422, confirm location and required fields are selected.',
+        'If login succeeds but UI looks stale, sign out and sign in again.',
+        'If data does not refresh, reload once and reopen the page.',
     ];
 
     return (
         <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end">
             {/* Chat Window */}
             {isOpen && (
-                <div className="mb-4 w-80 bg-dark-900 border border-primary-500/50 rounded-2xl shadow-2xl overflow-hidden glass translate-y-[-10px] animate-slide-up ring-1 ring-primary-500/20">
+                <div className="mb-4 w-[28rem] max-w-[95vw] bg-dark-900 border border-primary-500/50 rounded-2xl shadow-2xl overflow-hidden glass translate-y-[-10px] animate-slide-up ring-1 ring-primary-500/20">
                     <div className="bg-primary-600 p-4 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-white">
                             <Bot size={24} />
@@ -33,30 +153,175 @@ export default function SupportChatbot() {
                         </button>
                     </div>
 
-                    <div className="p-4 max-h-[400px] overflow-y-auto">
+                    <div className="p-4 max-h-[76vh] overflow-y-auto space-y-4">
                         <div className="bg-dark-800 p-3 rounded-lg mb-4 border border-dark-700">
                             <p className="text-sm text-dark-100 flex items-start gap-2">
                                 <span className="mt-1 text-primary-400">👋</span>
-                                Hello! I'm your CloudMart guide. How can I help you today?
+                                {isAuthenticated
+                                    ? `Hello ${user?.name?.split(' ')[0] || ''}! Here is your complete CloudMart process guide.`
+                                    : 'Hello! Here is the complete CloudMart process guide for new users.'}
+                            </p>
+                            <p className="text-[11px] text-primary-300 mt-2 uppercase tracking-widest font-semibold">
+                                {roleGuideLabel}
                             </p>
                         </div>
 
                         <div className="space-y-4">
+                            {(isGuest || isCustomer) && (
+                                <>
+                                    {isGuest && (
+                                        <div>
+                                            <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                                <CheckCircle2 size={12} />
+                                                First Time Setup
+                                            </h4>
+                                            <ol className="text-xs text-dark-300 space-y-2 list-decimal pl-4">
+                                                {onboardingGuide.map((step) => (
+                                                    <li key={step}>{step}</li>
+                                                ))}
+                                            </ol>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                            <HelpCircle size={12} />
+                                            Customer Flow: Browse to Delivery
+                                        </h4>
+                                        <ol className="text-xs text-dark-300 space-y-2 list-decimal pl-4">
+                                            {customerGuide.map((step) => (
+                                                <li key={step}>{step}</li>
+                                            ))}
+                                        </ol>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                            <ShoppingCart size={12} />
+                                            Checkout Success Checklist
+                                        </h4>
+                                        <ol className="text-xs text-dark-300 space-y-2 list-decimal pl-4">
+                                            {checkoutGuide.map((step) => (
+                                                <li key={step}>{step}</li>
+                                            ))}
+                                        </ol>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                            <Route size={12} />
+                                            Order Status Meaning
+                                        </h4>
+                                        <ul className="text-xs text-dark-300 space-y-2 list-disc pl-4">
+                                            {orderTrackingGuide.map((item) => (
+                                                <li key={item}>{item}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                            <KeyRound size={12} />
+                                            Delivery Token (4-Digit Code)
+                                        </h4>
+                                        <ul className="text-xs text-dark-300 space-y-2 list-disc pl-4">
+                                            {deliveryTokenGuide.map((item) => (
+                                                <li key={item}>{item}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                            <FileText size={12} />
+                                            Orders and Invoices
+                                        </h4>
+                                        <ol className="text-xs text-dark-300 space-y-2 list-decimal pl-4">
+                                            {invoiceGuide.map((step) => (
+                                                <li key={step}>{step}</li>
+                                            ))}
+                                        </ol>
+                                    </div>
+                                </>
+                            )}
+
+                            {isDeliveryStaff && (
+                                <>
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                            <Truck size={12} />
+                                            Delivery Staff Flow
+                                        </h4>
+                                        <ol className="text-xs text-dark-300 space-y-2 list-decimal pl-4">
+                                            {deliveryGuide.map((step) => (
+                                                <li key={step}>{step}</li>
+                                            ))}
+                                        </ol>
+                                        <p className="text-[11px] mt-2 text-primary-300 flex items-start gap-1">
+                                            <CreditCard size={12} className="mt-0.5" />
+                                            Delivery confirmation always uses the customer&apos;s order code/token.
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                            <Route size={12} />
+                                            Delivery Status Reference
+                                        </h4>
+                                        <ul className="text-xs text-dark-300 space-y-2 list-disc pl-4">
+                                            {orderTrackingGuide.map((item) => (
+                                                <li key={item}>{item}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </>
+                            )}
+
+                            {isAdmin && (
+                                <>
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                            <ClipboardList size={12} />
+                                            Admin Essentials
+                                        </h4>
+                                        <ol className="text-xs text-dark-300 space-y-2 list-decimal pl-4">
+                                            {adminGuide.map((step) => (
+                                                <li key={step}>{step}</li>
+                                            ))}
+                                        </ol>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                            <Route size={12} />
+                                            Order Status Governance
+                                        </h4>
+                                        <ul className="text-xs text-dark-300 space-y-2 list-disc pl-4">
+                                            {orderTrackingGuide.map((item) => (
+                                                <li key={item}>{item}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </>
+                            )}
+
                             <div>
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
-                                    <HelpCircle size={12} />
-                                    How to use the app
+                                    <CheckCircle2 size={12} />
+                                    Quick Troubleshooting
                                 </h4>
                                 <ul className="text-xs text-dark-300 space-y-2 list-disc pl-4">
-                                    <li>Browse products using the <strong>Products</strong> page.</li>
-                                    <li>Add items into your <strong>Cart</strong>.</li>
-                                    <li>Track orders in <strong>My Orders</strong> section.</li>
-                                    <li>Switch <strong>Themes</strong> in the header toggle.</li>
+                                    {troubleshootingGuide.map((item) => (
+                                        <li key={item}>{item}</li>
+                                    ))}
                                 </ul>
                             </div>
 
                             <div>
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2">Quick Shortcuts</h4>
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                    <HelpCircle size={12} />
+                                    Quick Shortcuts
+                                </h4>
                                 <div className="grid grid-cols-1 gap-2">
                                     {shortcuts.map((s) => (
                                         <Link

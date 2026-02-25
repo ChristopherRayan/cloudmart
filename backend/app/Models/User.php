@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -35,12 +37,56 @@ class User extends Authenticatable
 
     protected $appends = ['profile_image_url'];
 
-    public function getProfileImageUrlAttribute()
+    public function getProfileImageUrlAttribute(): ?string
     {
-        if (!$this->profile_image) {
+        $normalized = $this->normalizeImageReference($this->profile_image, 'profile_images');
+        if (!$normalized) {
             return null;
         }
-        return asset('storage/' . $this->profile_image);
+
+        if (Str::startsWith($normalized, '/storage/')) {
+            $relativePath = ltrim(Str::after($normalized, '/storage/'), '/');
+            if (!Storage::disk('public')->exists($relativePath)) {
+                return null;
+            }
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeImageReference(?string $value, string $defaultDirectory): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (filter_var($trimmed, FILTER_VALIDATE_URL)) {
+            $path = parse_url($trimmed, PHP_URL_PATH);
+            if ($path && (Str::startsWith($path, '/storage/') || Str::startsWith($path, 'storage/'))) {
+                $trimmed = $path;
+            } else {
+                return $trimmed;
+            }
+        }
+
+        if (Str::startsWith($trimmed, '/storage/')) {
+            return $trimmed;
+        }
+
+        if (Str::startsWith($trimmed, 'storage/')) {
+            return '/' . ltrim($trimmed, '/');
+        }
+
+        if (Str::contains($trimmed, '/')) {
+            return '/storage/' . ltrim($trimmed, '/');
+        }
+
+        return '/storage/' . trim($defaultDirectory, '/') . '/' . ltrim($trimmed, '/');
     }
 
     // --- Relationships ---

@@ -54,6 +54,7 @@ export default function DeliveryLayout({ children }: DeliveryLayoutProps) {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const avatarFallbackDataUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23111827'/%3E%3Ccircle cx='32' cy='24' r='10' fill='%23d1d5db'/%3E%3Cpath d='M14 54c2-9 10-14 18-14s16 5 18 14' fill='%23d1d5db'/%3E%3C/svg%3E";
     const seenNotificationsRef = useRef<Set<string>>(new Set());
     const isPollingNotificationsRef = useRef(false);
 
@@ -282,7 +283,17 @@ export default function DeliveryLayout({ children }: DeliveryLayoutProps) {
                                 style={!user?.profile_image_url ? { background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)', boxShadow: '0 2px 8px rgba(59,130,246,0.35)' } : {}}
                             >
                                 {user?.profile_image_url ? (
-                                    <img src={user.profile_image_url} alt={user.name} className="w-full h-full object-cover" />
+                                    <img
+                                        src={user.profile_image_url}
+                                        alt={user.name}
+                                        className="w-full h-full object-cover"
+                                        onError={(event) => {
+                                            const target = event.currentTarget;
+                                            if (target.src !== avatarFallbackDataUrl) {
+                                                target.src = avatarFallbackDataUrl;
+                                            }
+                                        }}
+                                    />
                                 ) : (
                                     initials
                                 )}

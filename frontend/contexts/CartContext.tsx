@@ -24,6 +24,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const { isAuthenticated, hasRole } = useAuth();
     const isCustomer = hasRole('customer');
 
+    const ensureCustomerCanShop = useCallback((): boolean => {
+        if (!isAuthenticated) {
+            toast.error('Please sign in to continue.');
+            return false;
+        }
+        if (!isCustomer) {
+            toast.error('Only customer accounts can add items to cart or checkout.');
+            return false;
+        }
+        return true;
+    }, [isAuthenticated, isCustomer]);
+
     // Initialize from localStorage if available
     const [cart, setCart] = useState<Cart | null>(null);
 
@@ -87,10 +99,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, [refreshCart]);
 
     const addItem = useCallback(async (productId: number, quantity: number) => {
-        if (hasRole('admin')) {
-            toast.error('Admins cannot make purchases. Please use a customer account.');
-            return;
-        }
+        if (!ensureCustomerCanShop()) return;
 
         const response = await api.post<ApiResponse<CartResponse>>('/cart/items', {
             product_id: productId,
@@ -100,30 +109,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setCart(data.cart);
         setTotalItems(data.total_items);
         setTotalAmount(data.total_amount);
-    }, [hasRole]);
+    }, [ensureCustomerCanShop]);
 
     const updateQuantity = useCallback(async (itemId: number, quantity: number) => {
+        if (!ensureCustomerCanShop()) return;
         const response = await api.put<ApiResponse<CartResponse>>(`/cart/items/${itemId}`, { quantity });
         const data = response.data.data;
         setCart(data.cart);
         setTotalItems(data.total_items);
         setTotalAmount(data.total_amount);
-    }, []);
+    }, [ensureCustomerCanShop]);
 
     const removeItem = useCallback(async (itemId: number) => {
+        if (!ensureCustomerCanShop()) return;
         const response = await api.delete<ApiResponse<CartResponse>>(`/cart/items/${itemId}`);
         const data = response.data.data;
         setCart(data.cart);
         setTotalItems(data.total_items);
         setTotalAmount(data.total_amount);
-    }, []);
+    }, [ensureCustomerCanShop]);
 
     const clearCart = useCallback(async () => {
+        if (!ensureCustomerCanShop()) return;
         await api.delete('/cart');
         setCart(null);
         setTotalItems(0);
         setTotalAmount(0);
-    }, []);
+    }, [ensureCustomerCanShop]);
 
     return (
         <CartContext.Provider

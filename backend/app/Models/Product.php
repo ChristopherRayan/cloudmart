@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
@@ -32,22 +34,61 @@ class Product extends Model
         'is_featured' => 'boolean',
     ];
 
-    public function getImageUrlFullAttribute()
+    public function getImageUrlAttribute(?string $value): ?string
     {
-        if ($this->image_url) {
-            // If it's already a full URL, return as is
-            if (filter_var($this->image_url, FILTER_VALIDATE_URL)) {
-                return $this->image_url;
-            }
-            
-            // If it's a relative path, generate full URL
-            if (str_starts_with($this->image_url, '/storage/') || str_starts_with($this->image_url, 'storage/')) {
-                return asset($this->image_url);
-            }
-            return asset('storage/' . $this->image_url);
+        $normalized = $this->normalizeImageReference($value, 'product_images');
+        if (!$normalized) {
+            return null;
         }
-        
-        return null;
+
+        if (Str::startsWith($normalized, '/storage/')) {
+            $relativePath = ltrim(Str::after($normalized, '/storage/'), '/');
+            if (!Storage::disk('public')->exists($relativePath)) {
+                return null;
+            }
+        }
+
+        return $normalized;
+    }
+
+    public function getImageUrlFullAttribute(): ?string
+    {
+        return $this->image_url;
+    }
+
+    private function normalizeImageReference(?string $value, string $defaultDirectory): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (filter_var($trimmed, FILTER_VALIDATE_URL)) {
+            $path = parse_url($trimmed, PHP_URL_PATH);
+            if ($path && (Str::startsWith($path, '/storage/') || Str::startsWith($path, 'storage/'))) {
+                $trimmed = $path;
+            } else {
+                return $trimmed;
+            }
+        }
+
+        if (Str::startsWith($trimmed, '/storage/')) {
+            return $trimmed;
+        }
+
+        if (Str::startsWith($trimmed, 'storage/')) {
+            return '/' . ltrim($trimmed, '/');
+        }
+
+        if (Str::contains($trimmed, '/')) {
+            return '/storage/' . ltrim($trimmed, '/');
+        }
+
+        return '/storage/' . trim($defaultDirectory, '/') . '/' . ltrim($trimmed, '/');
     }
 
     public function category()

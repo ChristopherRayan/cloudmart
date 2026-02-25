@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
@@ -40,33 +41,61 @@ class ProfileController extends Controller
         if ($request->hasFile('image')) {
             // Delete old image if exists
             if ($user->profile_image) {
-                Storage::disk('public')->delete($user->profile_image);
+                $relativePath = $this->resolvePublicStorageRelativePath($user->profile_image, 'profile_images');
+                if ($relativePath && Storage::disk('public')->exists($relativePath)) {
+                    Storage::disk('public')->delete($relativePath);
+                }
             }
 
             $path = $request->file('image')->store('profile_images', 'public');
 
-            // Generate full URL
-            $url = Storage::url($path);
-
-            // Save relative path to DB (or full URL if preferred, but usually relative)
-            // Let's save the relative path but return the full URL
+            // Save relative path to DB and return a browser-safe /storage URL.
             $user->profile_image = $path;
             $user->save();
-
-            // We need to return the full URL for the frontend
-            // Ensure APP_URL is set correctly in .env
-            $fullUrl = asset('storage/' . $path);
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Image uploaded successfully',
                 'data' => [
                     'profile_image' => $path,
-                    'profile_image_url' => $fullUrl
+                    'profile_image_url' => Storage::url($path)
                 ]
             ]);
         }
 
         return response()->json(['message' => 'No image uploaded'], 400);
+    }
+
+    private function resolvePublicStorageRelativePath(?string $value, string $defaultDirectory): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (filter_var($trimmed, FILTER_VALIDATE_URL)) {
+            $path = parse_url($trimmed, PHP_URL_PATH);
+            if ($path) {
+                $trimmed = $path;
+            }
+        }
+
+        if (Str::startsWith($trimmed, '/storage/')) {
+            return ltrim(Str::after($trimmed, '/storage/'), '/');
+        }
+
+        if (Str::startsWith($trimmed, 'storage/')) {
+            return ltrim(Str::after($trimmed, 'storage/'), '/');
+        }
+
+        if (Str::contains($trimmed, '/')) {
+            return ltrim($trimmed, '/');
+        }
+
+        return trim($defaultDirectory, '/') . '/' . ltrim($trimmed, '/');
     }
 }

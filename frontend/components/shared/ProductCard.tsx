@@ -13,11 +13,16 @@ interface ProductCardProps {
 
 function ProductCard({ product }: ProductCardProps) {
     const { addItem } = useCart();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, hasRole } = useAuth();
+    const isPurchaseRestricted = hasRole('admin') || hasRole('delivery_staff');
     const [adding, setAdding] = useState(false);
 
     const handleAddToCart = async (e: React.MouseEvent) => {
         e.preventDefault();
+        if (isPurchaseRestricted) {
+            toast.error('This account type cannot place orders.');
+            return;
+        }
         if (!isAuthenticated) {
             toast.error('Please sign in to add items to cart');
             return;
@@ -109,13 +114,15 @@ function ProductCard({ product }: ProductCardProps) {
                                 </span>
                             )}
                         </div>
-                        <button
-                            onClick={handleAddToCart}
-                            disabled={adding || product.stock_quantity === 0}
-                            className="btn-primary text-sm py-2 px-4"
-                        >
-                            {adding ? '...' : product.stock_quantity === 0 ? 'Out of Stock' : 'Add'}
-                        </button>
+                        {!isPurchaseRestricted && (
+                            <button
+                                onClick={handleAddToCart}
+                                disabled={adding || product.stock_quantity === 0}
+                                className="btn-primary text-sm py-2 px-4"
+                            >
+                                {adding ? '...' : product.stock_quantity === 0 ? 'Out of Stock' : 'Add'}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

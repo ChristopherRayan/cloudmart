@@ -11,7 +11,8 @@ import { useState } from 'react';
 
 export default function CartPage() {
     const { cart, updateQuantity, removeItem, clearCart, totalAmount, isLoading } = useCart();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, hasRole } = useAuth();
+    const isPurchaseRestricted = hasRole('admin') || hasRole('delivery_staff');
     const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
     if (!isAuthenticated) {
@@ -26,6 +27,26 @@ export default function CartPage() {
                             <Link href="/login" className="btn-primary w-full">Sign In</Link>
                             <Link href="/register" className="btn-secondary w-full">Register</Link>
                         </div>
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
+
+    if (isPurchaseRestricted) {
+        return (
+            <div className="min-h-screen flex flex-col bg-dark-950">
+                <Header />
+                <main className="flex-grow flex items-center justify-center p-4">
+                    <div className="text-center card max-w-md w-full animate-fade-in">
+                        <h2 className="text-2xl font-bold text-dark-100 mb-4">Cart Not Available</h2>
+                        <p className="text-dark-400 mb-6">
+                            Admin and delivery staff accounts cannot add items to cart or place orders.
+                        </p>
+                        <Link href="/products" className="btn-primary w-full">
+                            Browse Products
+                        </Link>
                     </div>
                 </main>
                 <Footer />
