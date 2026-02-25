@@ -89,7 +89,7 @@ export default function Home() {
         const fetchData = async () => {
             try {
                 const [productsRes, heroRes] = await Promise.all([
-                    apiGet<ApiResponse<{ data: Product[] }>>('/products?per_page=100', {
+                    apiGet<ApiResponse<{ data: Product[] }>>('/products?per_page=40', {
                         cacheTtlMs: 30000,
                     }),
                     apiGet<ApiResponse<string[]>>('/hero-images', {
@@ -210,6 +210,9 @@ export default function Home() {
                                         src={imageUrl}
                                         alt=""
                                         className="w-full h-full object-cover"
+                                        loading={index === currentBgIndex ? 'eager' : 'lazy'}
+                                        fetchPriority={index === currentBgIndex ? 'high' : 'low'}
+                                        decoding="async"
                                         onError={(e) => {
                                             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1557821552-17105176677c?w=1920&q=80';
                                         }}
@@ -373,6 +376,8 @@ export default function Home() {
                                                 <img
                                                     src={categoryImageUrl}
                                                     alt={category.name}
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     onError={(event) => {
                                                         event.currentTarget.onerror = null;
                                                         event.currentTarget.src = CATEGORY_PLACEHOLDER_IMAGE;
@@ -383,6 +388,8 @@ export default function Home() {
                                                 <img
                                                     src={CATEGORY_PLACEHOLDER_IMAGE}
                                                     alt={`${category.name} placeholder`}
+                                                    loading="lazy"
+                                                    decoding="async"
                                                     className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:scale-110 transition-transform duration-700 ease-in-out"
                                                 />
                                             )}
@@ -484,7 +491,13 @@ export default function Home() {
                                             <div className="relative flex flex-col min-h-[340px]">
                                                 <div className="bg-dark-900/60 h-[180px]">
                                                     {product.image_url ? (
-                                                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                                                        <img
+                                                            src={product.image_url}
+                                                            alt={product.name}
+                                                            loading="lazy"
+                                                            decoding="async"
+                                                            className="w-full h-full object-cover"
+                                                        />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center text-5xl">🏷️</div>
                                                     )}

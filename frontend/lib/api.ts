@@ -1,7 +1,10 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
+const CLIENT_API_BASE_URL = '/api';
+const SERVER_API_BASE_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://nginx/api';
+
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api',
+    baseURL: typeof window === 'undefined' ? SERVER_API_BASE_URL : CLIENT_API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',

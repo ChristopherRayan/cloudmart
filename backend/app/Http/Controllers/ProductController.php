@@ -20,17 +20,39 @@ class ProductController extends Controller
         $categoryId = $request->get('category_id');
         $search = $request->get('search');
         $sortBy = $request->get('sort_by', 'created_at');
-        $sortDir = $request->get('sort_dir', 'desc');
-        $page = $request->get('page', 1);
-        $perPage = $request->get('per_page', 20);
+        $sortDir = strtolower((string) $request->get('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $page = max((int) $request->get('page', 1), 1);
+        $perPage = max(1, min((int) $request->get('per_page', 20), 100));
+
+        $allowedSorts = ['created_at', 'price', 'name', 'stock_quantity'];
+        if (!in_array($sortBy, $allowedSorts, true)) {
+            $sortBy = 'created_at';
+        }
 
         // Get global product version for cache invalidation
         $globalVersion = Cache::get('products_global_version', 0);
 
         $cacheKey = "products.index.{$globalVersion}.{$categoryId}.{$search}.{$sortBy}.{$sortDir}.{$page}.{$perPage}";
 
-        $products = Cache::remember($cacheKey, 3600, function () use ($request, $sortBy, $sortDir) {
-            $query = Product::with('category')->active();
+        $products = Cache::remember($cacheKey, 3600, function () use ($request, $sortBy, $sortDir, $perPage) {
+            $query = Product::query()
+                ->select([
+                    'id',
+                    'category_id',
+                    'name',
+                    'slug',
+                    'description',
+                    'price',
+                    'discount_price',
+                    'discount_end_at',
+                    'stock_quantity',
+                    'image_url',
+                    'is_active',
+                    'is_featured',
+                    'created_at',
+                ])
+                ->with(['category:id,name,slug,image_url'])
+                ->active();
 
             if ($request->has('category_id')) {
                 $query->where('category_id', $request->category_id);
@@ -42,7 +64,7 @@ class ProductController extends Controller
 
             $query->orderBy($sortBy, $sortDir);
 
-            return $query->paginate($request->get('per_page', 20));
+            return $query->paginate($perPage);
         });
 
         return $this->success($products);
@@ -54,7 +76,24 @@ class ProductController extends Controller
     public function show(int $id): JsonResponse
     {
         $product = Cache::remember("products.show.{$id}", 3600, function () use ($id) {
-            return Product::with('category')->find($id);
+            return Product::query()
+                ->select([
+                    'id',
+                    'category_id',
+                    'name',
+                    'slug',
+                    'description',
+                    'price',
+                    'discount_price',
+                    'discount_end_at',
+                    'stock_quantity',
+                    'image_url',
+                    'is_active',
+                    'is_featured',
+                    'created_at',
+                ])
+                ->with(['category:id,name,slug,image_url'])
+                ->find($id);
         });
 
         if (!$product) {

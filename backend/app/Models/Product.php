@@ -32,10 +32,6 @@ class Product extends Model
         'is_featured' => 'boolean',
     ];
 
-    protected $appends = [
-        'image_url_full',
-    ];
-
     public function getImageUrlFullAttribute()
     {
         if ($this->image_url) {

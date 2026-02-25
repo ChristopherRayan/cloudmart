@@ -5,13 +5,13 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 interface ProductCardProps {
     product: Product;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+function ProductCard({ product }: ProductCardProps) {
     const { addItem } = useCart();
     const { isAuthenticated } = useAuth();
     const [adding, setAdding] = useState(false);
@@ -42,6 +42,9 @@ export default function ProductCard({ product }: ProductCardProps) {
                         <img
                             src={product.image_url}
                             alt={product.name}
+                            loading="lazy"
+                            decoding="async"
+                            fetchPriority="low"
                             className="w-full h-full object-cover"
                             onError={(e) => {
                                 // Fallback to placeholder if image fails to load
@@ -119,3 +122,5 @@ export default function ProductCard({ product }: ProductCardProps) {
         </Link>
     );
 }
+
+export default memo(ProductCard);

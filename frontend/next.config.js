@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const apiProxyBase = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://nginx/api';
+
 const nextConfig = {
     reactStrictMode: true,
     images: {
@@ -9,7 +11,7 @@ const nextConfig = {
         return [
             {
                 source: '/api/:path*',
-                destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api'}/:path*`,
+                destination: `${apiProxyBase}/:path*`,
             },
             {
                 source: '/storage/:path*',

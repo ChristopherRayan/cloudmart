@@ -12,6 +12,7 @@ use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -181,31 +182,34 @@ class AdminController extends Controller
     public function analytics(Request $request): JsonResponse
     {
         try {
-            $today = Carbon::today();
-            $thisMonth = Carbon::now()->startOfMonth();
+            $cacheKey = 'admin.analytics.v1';
+            $analytics = Cache::remember($cacheKey, 60, function () {
+                $today = Carbon::today();
+                $thisMonth = Carbon::now()->startOfMonth();
 
-            $analytics = [
-                'total_orders' => Order::count(),
-                'orders_today' => Order::whereDate('created_at', $today)->count(),
-                'orders_this_month' => Order::where('created_at', '>=', $thisMonth)->count(),
-                'revenue_today' => Order::whereDate('created_at', $today)
-                ->where('payment_status', 'completed')
-                ->sum('total_amount'),
-                'revenue_this_month' => Order::where('created_at', '>=', $thisMonth)
-                ->where('payment_status', 'completed')
-                ->sum('total_amount'),
-                'total_revenue' => Order::where('payment_status', 'completed')->sum('total_amount'),
-                'total_users' => User::where('role', 'customer')->count(),
-                'total_products' => Product::count(),
-                'low_stock_products' => Product::where('stock_quantity', '<', 10)->where('is_active', true)->count(),
-                'orders_by_status' => Order::select('status', DB::raw('count(*) as count'))
-                ->groupBy('status')
-                ->pluck('count', 'status'),
-                'recent_orders' => Order::with(['user', 'deliveryLocation'])
-                ->orderBy('created_at', 'desc')
-                ->limit(5)
-                ->get(),
-            ];
+                return [
+                    'total_orders' => Order::count(),
+                    'orders_today' => Order::whereDate('created_at', $today)->count(),
+                    'orders_this_month' => Order::where('created_at', '>=', $thisMonth)->count(),
+                    'revenue_today' => Order::whereDate('created_at', $today)
+                        ->where('payment_status', 'completed')
+                        ->sum('total_amount'),
+                    'revenue_this_month' => Order::where('created_at', '>=', $thisMonth)
+                        ->where('payment_status', 'completed')
+                        ->sum('total_amount'),
+                    'total_revenue' => Order::where('payment_status', 'completed')->sum('total_amount'),
+                    'total_users' => User::where('role', 'customer')->count(),
+                    'total_products' => Product::count(),
+                    'low_stock_products' => Product::where('stock_quantity', '<', 10)->where('is_active', true)->count(),
+                    'orders_by_status' => Order::select('status', DB::raw('count(*) as count'))
+                        ->groupBy('status')
+                        ->pluck('count', 'status'),
+                    'recent_orders' => Order::with(['user', 'deliveryLocation'])
+                        ->orderBy('created_at', 'desc')
+                        ->limit(5)
+                        ->get(),
+                ];
+            });
 
             return $this->success($analytics);
         } catch (\Exception $e) {

@@ -19,12 +19,19 @@ class CategoryController extends Controller
      */
     public function index(): JsonResponse
     {
-        $categories = Category::withCount(['products' => function ($query) {
-                $query->where('is_active', true);
-            }
-            ])
-            ->orderBy('name')
-            ->get();
+        $productsVersion = Cache::get('products_global_version', 0);
+        $categoriesVersion = Cache::get('categories_global_version', 0);
+        $cacheKey = "categories.all.{$categoriesVersion}.{$productsVersion}";
+
+        $categories = Cache::remember($cacheKey, 1800, function () {
+            return Category::query()
+                ->select(['id', 'name', 'slug', 'description', 'image_url', 'is_active'])
+                ->withCount(['products' => function ($query) {
+                    $query->where('is_active', true);
+                }])
+                ->orderBy('name')
+                ->get();
+        });
 
         return $this->success($categories);
     }
@@ -44,7 +51,7 @@ class CategoryController extends Controller
 
         $category = Category::create($data);
 
-        Cache::forget('categories.all');
+        $this->touchCategoriesCacheVersion();
 
         return $this->success($category, 'Category created successfully.', 201);
     }
@@ -70,7 +77,7 @@ class CategoryController extends Controller
 
         $category->update($data);
 
-        Cache::forget('categories.all');
+        $this->touchCategoriesCacheVersion();
 
         return $this->success($category, 'Category updated successfully.');
     }
@@ -89,7 +96,7 @@ class CategoryController extends Controller
 
         $category->delete();
         
-        Cache::forget('categories.all');
+        $this->touchCategoriesCacheVersion();
 
         return $this->success(null, 'Category deleted successfully.');
     }
@@ -118,7 +125,7 @@ class CategoryController extends Controller
             $category->image_url = $publicPath;
             $category->save();
 
-            Cache::forget('categories.all');
+            $this->touchCategoriesCacheVersion();
 
             return $this->success([
                 'image_url' => $publicPath,
@@ -177,5 +184,11 @@ class CategoryController extends Controller
         if ($relativePath && Storage::disk('public')->exists($relativePath)) {
             Storage::disk('public')->delete($relativePath);
         }
+    }
+
+    private function touchCategoriesCacheVersion(): void
+    {
+        Cache::put('categories_global_version', microtime(true));
+        Cache::forget('categories.all');
     }
 }
