@@ -378,27 +378,7 @@ class AdminController extends Controller
     public function auditLogs(Request $request): JsonResponse
     {
         try {
-            $filters = [];
-            
-            if ($request->has('action')) {
-                $filters['action'] = $request->action;
-            }
-            
-            if ($request->has('user')) {
-                $filters['user'] = $request->user;
-            }
-            
-            if ($request->has('date_from')) {
-                $filters['date_from'] = $request->date_from;
-            }
-            
-            if ($request->has('date_to')) {
-                $filters['date_to'] = $request->date_to;
-            }
-            
-            if ($request->has('per_page')) {
-                $filters['per_page'] = $request->per_page;
-            }
+            $perPage = max(5, min((int) $request->get('per_page', 10), 100));
             
             $logs = AuditLog::orderBy('created_at', 'desc')
                 ->when($request->filled('action'), function ($query) use ($request) {
@@ -416,7 +396,7 @@ class AdminController extends Controller
                 ->when($request->filled('date_to'), function ($query) use ($request) {
                     $query->whereDate('created_at', '<=', $request->date_to);
                 })
-                ->paginate($request->get('per_page', 10));
+                ->paginate($perPage);
 
             return $this->success($logs);
         } catch (\Exception $e) {

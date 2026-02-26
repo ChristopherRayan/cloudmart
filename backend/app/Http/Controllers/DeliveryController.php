@@ -26,8 +26,46 @@ class DeliveryController extends Controller
     {
         $deliveries = Delivery::where('delivery_person_id', $request->user()->id)
             ->whereIn('status', ['assigned', 'in_transit'])
-            ->with(['order.user', 'order.deliveryLocation', 'order.orderItems.product'])
+            ->select([
+                'id',
+                'order_id',
+                'delivery_person_id',
+                'collector_phone',
+                'status',
+                'assigned_at',
+                'picked_up_at',
+                'delivered_at',
+            ])
+            ->with([
+                'order' => function ($query) {
+                    $query->select([
+                        'id',
+                        'order_id',
+                        'user_id',
+                        'delivery_location_id',
+                        'total_amount',
+                        'notes',
+                        'created_at',
+                    ])
+                    ->with([
+                        'user:id,name,phone',
+                        'deliveryLocation:id,name,description,latitude,longitude',
+                        'orderItems' => function ($itemQuery) {
+                            $itemQuery->select([
+                                'id',
+                                'order_id',
+                                'product_id',
+                                'quantity',
+                                'price',
+                                'subtotal',
+                            ])
+                            ->with(['product:id,name']);
+                        },
+                    ]);
+                },
+            ])
             ->orderBy('assigned_at', 'desc')
+            ->limit(30)
             ->get();
 
         return $this->success($deliveries);

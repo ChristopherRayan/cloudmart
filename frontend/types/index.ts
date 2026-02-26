@@ -67,6 +67,7 @@ export interface DeliveryLocation {
     name: string;
     code: string;
     description: string | null;
+    address?: string | null;
     polygon_coords: Array<{ lat: number; lng: number }>;
     latitude: number | null;
     longitude: number | null;
@@ -92,6 +93,8 @@ export interface Delivery {
     picked_up_at: string | null;
     delivered_at: string | null;
     notes: string | null;
+    created_at?: string | null;
+    updated_at?: string | null;
     delivery_person?: User;
     order?: Order;
 }

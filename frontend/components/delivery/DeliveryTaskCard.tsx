@@ -77,7 +77,9 @@ export default function DeliveryTaskCard({ delivery, onRefresh }: DeliveryTaskCa
                         <div className="flex-1">
                             <p className="text-xs text-dark-500 uppercase tracking-widest font-bold mb-1">Delivery Location</p>
                             <h3 className="text-base font-bold text-dark-100">{order.delivery_location?.name || 'Standard Zone'}</h3>
-                            <p className="text-sm text-dark-300 mt-1">{order.delivery_location?.address || 'Address not available'}</p>
+                                    <p className="text-sm text-dark-300 mt-1">
+                                        {order.delivery_location?.address || order.delivery_location?.description || 'Address not available'}
+                                    </p>
                         </div>
                     </div>
 
@@ -92,7 +94,7 @@ export default function DeliveryTaskCard({ delivery, onRefresh }: DeliveryTaskCa
                             <p className="text-xs text-dark-500 uppercase tracking-widest font-bold mb-1">Customer Details</p>
                             <p className="text-base font-medium text-dark-200">{order.user?.name || 'Guest Customer'}</p>
                             <a 
-                                href={`tel:${order.user?.phone}`}
+                                href={order.user?.phone ? `tel:${order.user.phone}` : '#'}
                                 className="inline-flex items-center gap-1.5 text-sm text-primary-400 hover:text-primary-300 mt-1"
                             >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

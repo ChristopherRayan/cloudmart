@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { apiGet } from '@/lib/api';
@@ -12,21 +12,16 @@ import toast from 'react-hot-toast';
 export default function DeliveryDashboard() {
     const [deliveries, setDeliveries] = useState<Delivery[]>([]);
     const [loading, setLoading] = useState(true);
-    const { isAuthenticated, hasRole } = useAuth();
+    const { isAuthenticated, hasRole, isLoading } = useAuth();
     const router = useRouter();
 
-    useEffect(() => {
-        if (!isAuthenticated || !hasRole('delivery_staff')) {
-            router.push('/login');
-            return;
-        }
-        fetchAssignedDeliveries();
-    }, [isAuthenticated, hasRole, router]);
-
-    const fetchAssignedDeliveries = async () => {
+    const fetchAssignedDeliveries = useCallback(async (forceRefresh = false) => {
         try {
             setLoading(true);
-            const response = await apiGet<ApiResponse<Delivery[]>>('/delivery/assigned');
+            const response = await apiGet<ApiResponse<Delivery[]>>('/delivery/assigned', {
+                cacheTtlMs: forceRefresh ? 0 : 5000,
+                forceRefresh,
+            });
             setDeliveries(response.data.data);
         } catch (error) {
             console.error('Failed to fetch deliveries', error);
@@ -34,7 +29,18 @@ export default function DeliveryDashboard() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (isLoading) return;
+
+        if (!isAuthenticated || !hasRole('delivery_staff')) {
+            router.push('/login');
+            return;
+        }
+
+        fetchAssignedDeliveries();
+    }, [fetchAssignedDeliveries, hasRole, isAuthenticated, isLoading, router]);
 
     if (loading) {
         return (
@@ -59,7 +65,7 @@ export default function DeliveryDashboard() {
                         <p className="text-dark-400 mt-1">Track and manage your assigned deliveries</p>
                     </div>
                     <button
-                        onClick={fetchAssignedDeliveries}
+                        onClick={() => fetchAssignedDeliveries(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700 text-dark-200 rounded-lg border border-dark-700 transition-colors"
                     >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -81,7 +87,7 @@ export default function DeliveryDashboard() {
                             You don&apos;t have any active deliveries. New orders will appear here when assigned.
                         </p>
                         <button
-                            onClick={fetchAssignedDeliveries}
+                            onClick={() => fetchAssignedDeliveries(true)}
                             className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-colors mx-auto"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

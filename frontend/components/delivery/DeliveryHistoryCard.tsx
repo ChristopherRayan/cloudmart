@@ -10,7 +10,7 @@ interface DeliveryHistoryCardProps {
 export default function DeliveryHistoryCard({ delivery }: DeliveryHistoryCardProps) {
     const [showDetails, setShowDetails] = useState(false);
 
-    const formatDate = (dateString: string | undefined) => {
+    const formatDate = (dateString: string | null | undefined) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
         if (Number.isNaN(date.getTime())) return 'N/A';
@@ -65,7 +65,9 @@ export default function DeliveryHistoryCard({ delivery }: DeliveryHistoryCardPro
                                 <div>
                                     <p className="text-xs text-dark-500 uppercase tracking-widest font-bold mb-1">Delivery Location</p>
                                     <p className="text-sm font-medium text-dark-200">{delivery.order?.delivery_location?.name}</p>
-                                    <p className="text-sm text-dark-400">{delivery.order?.delivery_location?.address}</p>
+                                    <p className="text-sm text-dark-400">
+                                        {delivery.order?.delivery_location?.address || delivery.order?.delivery_location?.description || 'Address not available'}
+                                    </p>
                                 </div>
                             </div>
                         </div>

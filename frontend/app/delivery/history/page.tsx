@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { apiGet } from '@/lib/api';
@@ -14,35 +14,41 @@ export default function DeliveryHistoryPage() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
-    const { isAuthenticated, hasRole } = useAuth();
+    const { isAuthenticated, hasRole, isLoading } = useAuth();
     const router = useRouter();
 
-    useEffect(() => {
-        if (!isAuthenticated || !hasRole('delivery_staff')) {
-            router.push('/login');
-            return;
-        }
-        fetchDeliveryHistory();
-    }, [isAuthenticated, hasRole, router]);
-
-    const fetchDeliveryHistory = async () => {
+    const fetchDeliveryHistory = useCallback(async (targetPage: number, forceRefresh = false) => {
         try {
             setLoading(true);
-            const response = await apiGet<ApiResponse<any>>(`/delivery/history?page=${page}`);
+            const response = await apiGet<ApiResponse<any>>(`/delivery/history?page=${targetPage}`, {
+                cacheTtlMs: forceRefresh ? 0 : 5000,
+                forceRefresh,
+            });
             const newDeliveries = response.data.data.data;
-            if (page === 1) {
+            if (targetPage === 1) {
                 setDeliveries(newDeliveries);
             } else {
                 setDeliveries((prev) => [...prev, ...newDeliveries]);
             }
-            setHasMore(page < response.data.data.last_page);
+            setHasMore(targetPage < response.data.data.last_page);
         } catch (error) {
             console.error('Failed to fetch delivery history', error);
             toast.error('Failed to load delivery history');
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (isLoading) return;
+
+        if (!isAuthenticated || !hasRole('delivery_staff')) {
+            router.push('/login');
+            return;
+        }
+
+        fetchDeliveryHistory(1);
+    }, [fetchDeliveryHistory, hasRole, isAuthenticated, isLoading, router]);
 
     const loadMore = () => {
         if (!hasMore || loading) return;
@@ -50,8 +56,8 @@ export default function DeliveryHistoryPage() {
     };
 
     useEffect(() => {
-        if (page > 1) fetchDeliveryHistory();
-    }, [page]);
+        if (page > 1) fetchDeliveryHistory(page);
+    }, [fetchDeliveryHistory, page]);
 
     if (loading && page === 1) {
         return (
@@ -76,7 +82,7 @@ export default function DeliveryHistoryPage() {
                         <p className="text-dark-400 mt-1">Your completed delivery records</p>
                     </div>
                     <button
-                        onClick={() => { setPage(1); fetchDeliveryHistory(); }}
+                        onClick={() => { setPage(1); fetchDeliveryHistory(1, true); }}
                         className="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700 text-dark-200 rounded-lg border border-dark-700 transition-colors"
                     >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

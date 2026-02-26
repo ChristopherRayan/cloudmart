@@ -7,13 +7,13 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface AuditLog {
   id: number;
-  user_name: string;
-  user_email: string;
+  user_name: string | null;
+  user_email: string | null;
   action: string;
   resource_type: string;
-  resource_id: string;
-  ip_address: string;
-  user_agent: string;
+  resource_id: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
   created_at: string;
 }
 
@@ -42,7 +42,7 @@ export default function AuditLogsPage() {
     date_from: '',
     date_to: ''
   });
-  const { user } = useAuth();
+  useAuth();
 
   useEffect(() => {
     fetchAuditLogs();
@@ -60,14 +60,18 @@ export default function AuditLogsPage() {
         ...(filters.date_to && { date_to: filters.date_to })
       });
 
-      const response = await apiGet<ApiResponse<AuditLogsResponse>>(`/admin/audit-logs?${params}`);
-      setLogs(response.data.data.data);
-      setLastPage(response.data.data.last_page);
-      setTotal(response.data.data.total);
+      const response = await apiGet<ApiResponse<AuditLogsResponse>>(`/admin/audit-logs?${params}`, {
+        cacheTtlMs: 8000,
+      });
+      const payload = response.data?.data;
+      const nextLogs = Array.isArray(payload?.data) ? payload.data : [];
+      setLogs(nextLogs);
+      setLastPage(payload?.last_page || 1);
+      setTotal(payload?.total || 0);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch audit logs:', err);
-      setError('Failed to load audit logs');
+      setError(err?.response?.data?.message || 'Failed to load audit logs');
     } finally {
       setLoading(false);
     }
@@ -89,7 +93,10 @@ export default function AuditLogsPage() {
   };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'N/A';
+
+    return date.toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -98,6 +105,14 @@ export default function AuditLogsPage() {
       second: '2-digit'
     });
   };
+
+  const uniqueActiveUsers = Array.from(
+    new Set(
+      logs
+        .map((log) => log.user_email)
+        .filter((email): email is string => Boolean(email && email.trim()))
+    )
+  ).length;
 
   if (loading && logs.length === 0) {
     return (
@@ -249,7 +264,7 @@ export default function AuditLogsPage() {
             <div>
               <p className="text-sm font-medium text-purple-400 uppercase tracking-wider">Active Users</p>
               <p className="text-3xl font-bold text-dark-100 mt-1">
-                {[...new Set(logs.map(log => log.user_email))].length}
+                {uniqueActiveUsers}
               </p>
             </div>
             <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center">
@@ -285,7 +300,7 @@ export default function AuditLogsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-dark-100">{log.user_name}</div>
-                      <div className="text-sm text-dark-400">{log.user_email}</div>
+                      <div className="text-sm text-dark-400">{log.user_email || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${log.action === 'login' ? 'bg-green-500/10 text-green-400' :
@@ -300,16 +315,16 @@ export default function AuditLogsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-dark-200">{log.resource_type}</div>
-                      <div className="text-sm text-dark-400">ID: {log.resource_id}</div>
+                      <div className="text-sm text-dark-400">ID: {log.resource_id || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-dark-200">{log.ip_address}</div>
+                      <div className="text-sm text-dark-200">{log.ip_address || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <details className="text-sm text-dark-400">
                         <summary className="cursor-pointer hover:text-dark-200">View details</summary>
                         <div className="mt-2 p-3 bg-dark-900/50 rounded-lg text-xs">
-                          <div><strong>User Agent:</strong> {log.user_agent}</div>
+                          <div><strong>User Agent:</strong> {log.user_agent || 'N/A'}</div>
                         </div>
                       </details>
                     </td>
