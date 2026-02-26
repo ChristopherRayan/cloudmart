@@ -55,6 +55,16 @@ class DeliveryController extends Controller
                     ->with([
                         'user:id,name,phone',
                         'deliveryLocation:id,name,description,latitude,longitude',
+                        'orderItems' => function ($itemQuery) {
+                            $itemQuery->select([
+                                'id',
+                                'order_id',
+                                'product_id',
+                                'quantity',
+                            ])->with([
+                                'product:id,name',
+                            ]);
+                        },
                     ]);
                 },
             ])

@@ -107,18 +107,34 @@ export default function DeliveryTaskCard({ delivery, onRefresh }: DeliveryTaskCa
                         </div>
                     </div>
 
-                    {/* Delivery Summary */}
+                    {/* Ordered Items */}
                     <div className="p-4 bg-dark-800/50 rounded-xl border border-dark-700">
-                        <p className="text-xs text-dark-500 uppercase tracking-widest font-bold mb-3">Delivery Summary</p>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="rounded-lg border border-dark-700 bg-dark-900/50 px-3 py-2">
-                                <p className="text-[11px] uppercase tracking-wider text-dark-500">Items</p>
-                                <p className="text-lg font-semibold text-dark-100">{order.order_items_count ?? order.order_items?.length ?? 0}</p>
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                            <p className="text-xs text-dark-500 uppercase tracking-widest font-bold">Ordered Items</p>
+                            <span className="text-xs text-dark-300">
+                                {(order.order_items_count ?? order.order_items?.length ?? 0)} items
+                            </span>
+                        </div>
+
+                        {order.order_items && order.order_items.length > 0 ? (
+                            <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                                {order.order_items.map((item) => (
+                                    <div key={item.id} className="rounded-lg border border-dark-700 bg-dark-900/50 px-3 py-2 flex items-center justify-between gap-3">
+                                        <p className="text-sm text-dark-200 truncate">
+                                            {item.quantity}x {item.product?.name || 'Product'}
+                                        </p>
+                                    </div>
+                                ))}
                             </div>
-                            <div className="rounded-lg border border-dark-700 bg-dark-900/50 px-3 py-2">
-                                <p className="text-[11px] uppercase tracking-wider text-dark-500">Amount</p>
-                                <p className="text-lg font-semibold text-primary-400">MWK {Number(order.total_amount).toLocaleString()}</p>
-                            </div>
+                        ) : (
+                            <p className="text-sm text-dark-400">Items will appear here once loaded.</p>
+                        )}
+
+                        <div className="mt-3 pt-3 border-t border-dark-700 flex items-center justify-between">
+                            <span className="text-sm text-dark-400">Total Amount</span>
+                            <span className="text-lg font-semibold text-primary-400">
+                                MWK {Number(order.total_amount).toLocaleString()}
+                            </span>
                         </div>
                     </div>
                 </div>

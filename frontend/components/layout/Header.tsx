@@ -100,13 +100,14 @@ export default function Header() {
     };
 
     const isHomePage = pathname === '/';
+    const logoHref = hasRole('delivery_staff') ? '/delivery/dashboard' : '/';
 
     return (
         <header className={isHomePage ? 'fixed inset-x-0 top-0 z-50 bg-transparent' : 'sticky top-0 z-50 glass border-b border-dark-700/50'}>
             <div className="w-full px-4 sm:px-8 lg:px-12">
                 <div className={`flex items-center justify-between h-16 ${isHomePage ? 'mt-2 sm:mt-3' : ''}`}>
                     {/* Logo */}
-                    <Link href="/" className="flex items-center space-x-2">
+                    <Link href={logoHref} className="flex items-center space-x-2">
                         <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
                             <span className="text-white font-bold text-lg">C</span>
                         </div>
@@ -115,9 +116,11 @@ export default function Header() {
 
                     {/* Desktop Nav */}
                     <nav className="hidden md:flex items-center space-x-6">
-                        <Link href="/products" className={`transition-colors text-sm font-medium ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-300 hover:text-primary-400'}`}>
-                            Products
-                        </Link>
+                        {!hasRole('delivery_staff') && (
+                            <Link href="/products" className={`transition-colors text-sm font-medium ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-300 hover:text-primary-400'}`}>
+                                Products
+                            </Link>
+                        )}
                     </nav>
 
                     {/* Right side */}
@@ -321,9 +324,11 @@ export default function Header() {
                 {/* Mobile Menu Panel */}
                 {mobileMenuOpen && (
                     <div className={`md:hidden py-4 px-4 space-y-4 animate-fade-in ${isHomePage ? 'mt-2 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-2xl backdrop-saturate-150' : 'glass border-t border-dark-700/50'}`}>
-                        <Link href="/products" className={`block font-medium py-2 ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-200'}`} onClick={() => setMobileMenuOpen(false)}>
-                            Products
-                        </Link>
+                        {!hasRole('delivery_staff') && (
+                            <Link href="/products" className={`block font-medium py-2 ${isHomePage ? 'text-white/90 hover:text-white' : 'text-dark-200'}`} onClick={() => setMobileMenuOpen(false)}>
+                                Products
+                            </Link>
+                        )}
                         {isAuthenticated && (
                             <>
                                 {hasRole('delivery_staff') && (
