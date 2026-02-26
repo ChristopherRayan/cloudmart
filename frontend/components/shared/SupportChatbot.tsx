@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { ReactNode, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
     MessageSquare,
@@ -25,8 +25,17 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
+type Shortcut = {
+    name: string;
+    icon: ReactNode;
+    path?: string;
+    action?: () => void;
+};
+
 export default function SupportChatbot() {
     const [isOpen, setIsOpen] = useState(false);
+    const [showDeliveryProcessGuide, setShowDeliveryProcessGuide] = useState(false);
+    const deliveryProcessGuideRef = useRef<HTMLDivElement | null>(null);
     const { user, isAuthenticated, hasRole } = useAuth();
     const isAdmin = hasRole('admin');
     const isDeliveryStaff = hasRole('delivery_staff');
@@ -40,7 +49,16 @@ export default function SupportChatbot() {
                 ? 'Customer Guide'
                 : 'New User Guide';
 
-    const shortcuts = [
+    const handleDeliveryProcessShortcut = () => {
+        setShowDeliveryProcessGuide(true);
+
+        setTimeout(() => {
+            deliveryProcessGuideRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+    };
+
+    const shortcuts: Shortcut[] = [
+        { name: 'Delivery Process', icon: <Route size={18} />, action: handleDeliveryProcessShortcut },
         { name: 'Home', path: '/', icon: <Home size={18} /> },
         { name: 'Products', path: '/products', icon: <ShoppingBag size={18} /> },
         { name: 'My Cart', path: '/cart', icon: <ShoppingCart size={18} /> },
@@ -117,6 +135,14 @@ export default function SupportChatbot() {
         'At customer handover, ask for the exact 4-digit delivery code from their order.',
         'Enter the code in delivery confirmation. Only exact code matches are accepted.',
         'Once verified, status moves to delivered with timestamp and staff audit trail.',
+    ];
+
+    const deliveryProcessShortcutGuide = [
+        'Browse products and add items to cart.',
+        'Checkout with an active admin-configured delivery location.',
+        'Track your order status from pending to out_for_delivery.',
+        'At handover, provide the 4-digit delivery code shown in your order.',
+        'Delivery staff verifies the code to complete a successful delivery.',
     ];
 
     const adminGuide = [
@@ -305,6 +331,20 @@ export default function SupportChatbot() {
                                 </>
                             )}
 
+                            {showDeliveryProcessGuide && (
+                                <div ref={deliveryProcessGuideRef}>
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
+                                        <Route size={12} />
+                                        Delivery Process Shortcut
+                                    </h4>
+                                    <ol className="text-xs text-dark-300 space-y-2 list-decimal pl-4">
+                                        {deliveryProcessShortcutGuide.map((step) => (
+                                            <li key={step}>{step}</li>
+                                        ))}
+                                    </ol>
+                                </div>
+                            )}
+
                             <div>
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-dark-400 mb-2 flex items-center gap-2">
                                     <CheckCircle2 size={12} />
@@ -324,15 +364,27 @@ export default function SupportChatbot() {
                                 </h4>
                                 <div className="grid grid-cols-1 gap-2">
                                     {shortcuts.map((s) => (
-                                        <Link
-                                            key={s.name}
-                                            href={s.path}
-                                            onClick={() => setIsOpen(false)}
-                                            className="flex items-center gap-3 p-2.5 bg-dark-800 hover:bg-dark-700 border border-dark-700 rounded-lg text-sm text-dark-100 transition-all hover:border-primary-500/50 group"
-                                        >
-                                            <span className="text-primary-400">{s.icon}</span>
-                                            <span className="group-hover:text-primary-400 transition-colors">{s.name}</span>
-                                        </Link>
+                                        s.action ? (
+                                            <button
+                                                key={s.name}
+                                                type="button"
+                                                onClick={s.action}
+                                                className="w-full flex items-center gap-3 p-2.5 bg-dark-800 hover:bg-dark-700 border border-dark-700 rounded-lg text-sm text-dark-100 transition-all hover:border-primary-500/50 group text-left"
+                                            >
+                                                <span className="text-primary-400">{s.icon}</span>
+                                                <span className="group-hover:text-primary-400 transition-colors">{s.name}</span>
+                                            </button>
+                                        ) : (
+                                            <Link
+                                                key={s.name}
+                                                href={s.path || '/'}
+                                                onClick={() => setIsOpen(false)}
+                                                className="flex items-center gap-3 p-2.5 bg-dark-800 hover:bg-dark-700 border border-dark-700 rounded-lg text-sm text-dark-100 transition-all hover:border-primary-500/50 group"
+                                            >
+                                                <span className="text-primary-400">{s.icon}</span>
+                                                <span className="group-hover:text-primary-400 transition-colors">{s.name}</span>
+                                            </Link>
+                                        )
                                     ))}
                                 </div>
                             </div>

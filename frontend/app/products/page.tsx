@@ -18,9 +18,16 @@ function ProductList() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
-    const [meta, setMeta] = useState<any>(null);
+    const [meta, setMeta] = useState<{
+        current_page: number;
+        last_page: number;
+        total: number;
+        per_page: number;
+    } | null>(null);
     const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'created_at');
     const [sortDir, setSortDir] = useState(searchParams.get('sort_dir') || 'desc');
+    const pageParam = Number.parseInt(searchParams.get('page') || '1', 10);
+    const currentPage = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
     // Filter states
     const categoryId = searchParams.get('category_id');
@@ -38,7 +45,8 @@ function ProductList() {
                 if (searchQuery) params.append('search', searchQuery);
                 params.append('sort_by', sortBy);
                 params.append('sort_dir', sortDir);
-                params.append('per_page', '12');
+                params.append('per_page', '20');
+                params.append('page', currentPage.toString());
 
                 const response = await apiGet<ApiResponse<PaginatedResponse<Product>>>(`/products?${params.toString()}`, {
                     cacheTtlMs: 15000,
@@ -54,6 +62,8 @@ function ProductList() {
                     setMeta({
                         current_page: paginated.current_page,
                         last_page: paginated.last_page,
+                        total: paginated.total,
+                        per_page: paginated.per_page,
                     });
                 } else {
                     setProducts([]);
@@ -76,7 +86,7 @@ function ProductList() {
         return () => {
             isMounted = false;
         };
-    }, [categoryId, searchQuery, sortBy, sortDir]);
+    }, [categoryId, searchQuery, sortBy, sortDir, currentPage]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -86,6 +96,7 @@ function ProductList() {
         } else {
             params.delete('search');
         }
+        params.set('page', '1');
         router.push(`/products?${params.toString()}`);
     };
 
@@ -96,6 +107,7 @@ function ProductList() {
         } else {
             params.delete('category_id');
         }
+        params.set('page', '1');
         router.push(`/products?${params.toString()}`);
     };
 
@@ -107,6 +119,17 @@ function ProductList() {
         const params = new URLSearchParams(searchParams.toString());
         params.set('sort_by', field);
         params.set('sort_dir', dir);
+        params.set('page', '1');
+        router.push(`/products?${params.toString()}`);
+    };
+
+    const handlePageChange = (page: number) => {
+        if (page < 1 || (meta && page > meta.last_page)) {
+            return;
+        }
+
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('page', page.toString());
         router.push(`/products?${params.toString()}`);
     };
 
@@ -191,7 +214,9 @@ function ProductList() {
                     <div className="flex-1">
                         <div className="mb-6 flex items-center justify-end">
                             <span className="text-dark-400 text-sm">
-                                {(loading || isLoadingCategories) ? 'Loading...' : `${products.length} items`}
+                                {(loading || isLoadingCategories)
+                                    ? 'Loading...'
+                                    : `Showing ${products.length} of ${meta?.total ?? products.length} items`}
                             </span>
                         </div>
 
@@ -226,10 +251,33 @@ function ProductList() {
                                         ))}
                                     </div>
                                 )}
+
+                                {meta && meta.last_page > 1 && (
+                                    <div className="mt-8 flex items-center justify-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handlePageChange(meta.current_page - 1)}
+                                            disabled={meta.current_page <= 1 || loading}
+                                            className="px-4 py-2 rounded-lg border border-dark-700 bg-dark-900 text-dark-200 hover:bg-dark-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Previous
+                                        </button>
+                                        <span className="text-sm text-dark-300">
+                                            Page {meta.current_page} of {meta.last_page}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handlePageChange(meta.current_page + 1)}
+                                            disabled={meta.current_page >= meta.last_page || loading}
+                                            className="px-4 py-2 rounded-lg border border-dark-700 bg-dark-900 text-dark-200 hover:bg-dark-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                )}
                             </>
                         )}
 
-                        {/* Pagination could go here */}
                     </div>
                 </div>
             </main>
