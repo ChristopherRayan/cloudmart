@@ -102,6 +102,9 @@ export interface Delivery {
 export interface Order {
     id: number;
     order_id: string;
+    customer_name?: string | null;
+    customer_phone?: string | null;
+    order_items_count?: number;
     delivery_code?: string;
     delivery_status?: 'pending' | 'out_for_delivery' | 'delivered';
     delivered_at?: string | null;

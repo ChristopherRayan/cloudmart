@@ -24,6 +24,8 @@ class DeliveryController extends Controller
      */
     public function assigned(Request $request): JsonResponse
     {
+        $limit = max(1, min((int) $request->get('limit', 12), 25));
+
         $deliveries = Delivery::where('delivery_person_id', $request->user()->id)
             ->whereIn('status', ['assigned', 'in_transit'])
             ->select([
@@ -43,29 +45,21 @@ class DeliveryController extends Controller
                         'order_id',
                         'user_id',
                         'delivery_location_id',
+                        'customer_name',
+                        'customer_phone',
                         'total_amount',
                         'notes',
                         'created_at',
                     ])
+                    ->withCount('orderItems')
                     ->with([
                         'user:id,name,phone',
                         'deliveryLocation:id,name,description,latitude,longitude',
-                        'orderItems' => function ($itemQuery) {
-                            $itemQuery->select([
-                                'id',
-                                'order_id',
-                                'product_id',
-                                'quantity',
-                                'price',
-                                'subtotal',
-                            ])
-                            ->with(['product:id,name']);
-                        },
                     ]);
                 },
             ])
             ->orderBy('assigned_at', 'desc')
-            ->limit(30)
+            ->limit($limit)
             ->get();
 
         return $this->success($deliveries);

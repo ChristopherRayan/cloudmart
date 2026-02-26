@@ -12,24 +12,40 @@ import toast from 'react-hot-toast';
 export default function DeliveryDashboard() {
     const [deliveries, setDeliveries] = useState<Delivery[]>([]);
     const [loading, setLoading] = useState(true);
-    const { isAuthenticated, hasRole, isLoading } = useAuth();
+    const [refreshing, setRefreshing] = useState(false);
+    const { user, isAuthenticated, hasRole, isLoading } = useAuth();
     const router = useRouter();
+    const cacheKey = `delivery-dashboard-cache:${user?.id ?? 'guest'}`;
 
-    const fetchAssignedDeliveries = useCallback(async (forceRefresh = false) => {
-        try {
+    const fetchAssignedDeliveries = useCallback(async (forceRefresh = false, showLoader = false) => {
+        if (showLoader) {
             setLoading(true);
+        } else {
+            setRefreshing(true);
+        }
+
+        try {
             const response = await apiGet<ApiResponse<Delivery[]>>('/delivery/assigned', {
                 cacheTtlMs: forceRefresh ? 0 : 5000,
                 forceRefresh,
+                params: { limit: 12 },
+                timeout: 8000,
             });
-            setDeliveries(response.data.data);
+
+            const nextDeliveries = Array.isArray(response.data.data) ? response.data.data : [];
+            setDeliveries(nextDeliveries);
+
+            if (typeof window !== 'undefined' && user?.id) {
+                sessionStorage.setItem(cacheKey, JSON.stringify(nextDeliveries));
+            }
         } catch (error) {
             console.error('Failed to fetch deliveries', error);
             toast.error('Failed to load assigned deliveries');
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
-    }, []);
+    }, [cacheKey, user?.id]);
 
     useEffect(() => {
         if (isLoading) return;
@@ -39,8 +55,24 @@ export default function DeliveryDashboard() {
             return;
         }
 
-        fetchAssignedDeliveries();
-    }, [fetchAssignedDeliveries, hasRole, isAuthenticated, isLoading, router]);
+        let hasCachedDeliveries = false;
+        if (typeof window !== 'undefined' && user?.id) {
+            const raw = sessionStorage.getItem(cacheKey);
+            if (raw) {
+                try {
+                    const cachedDeliveries = JSON.parse(raw);
+                    if (Array.isArray(cachedDeliveries)) {
+                        setDeliveries(cachedDeliveries);
+                        hasCachedDeliveries = true;
+                    }
+                } catch {
+                    // Ignore invalid cache payload.
+                }
+            }
+        }
+
+        void fetchAssignedDeliveries(false, !hasCachedDeliveries);
+    }, [cacheKey, fetchAssignedDeliveries, hasRole, isAuthenticated, isLoading, router, user?.id]);
 
     if (loading) {
         return (
@@ -66,12 +98,17 @@ export default function DeliveryDashboard() {
                     </div>
                     <button
                         onClick={() => fetchAssignedDeliveries(true)}
+                        disabled={refreshing}
                         className="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700 text-dark-200 rounded-lg border border-dark-700 transition-colors"
                     >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        Refresh
+                        {refreshing ? (
+                            <span className="w-4 h-4 border-2 border-dark-300 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        )}
+                        {refreshing ? 'Refreshing...' : 'Refresh'}
                     </button>
                 </div>
 

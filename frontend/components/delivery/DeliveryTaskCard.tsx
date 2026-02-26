@@ -28,6 +28,8 @@ export default function DeliveryTaskCard({ delivery, onRefresh }: DeliveryTaskCa
         : delivery.status === 'in_transit'
             ? 'Out for Delivery'
             : delivery.status;
+    const customerName = order.user?.name || order.customer_name || 'Guest Customer';
+    const customerPhone = order.user?.phone || order.customer_phone;
 
     const handleStartDelivery = async () => {
         if (!isAssigned || starting) return;
@@ -92,38 +94,31 @@ export default function DeliveryTaskCard({ delivery, onRefresh }: DeliveryTaskCa
                         </div>
                         <div className="flex-1">
                             <p className="text-xs text-dark-500 uppercase tracking-widest font-bold mb-1">Customer Details</p>
-                            <p className="text-base font-medium text-dark-200">{order.user?.name || 'Guest Customer'}</p>
+                            <p className="text-base font-medium text-dark-200">{customerName}</p>
                             <a 
-                                href={order.user?.phone ? `tel:${order.user.phone}` : '#'}
+                                href={customerPhone ? `tel:${customerPhone}` : '#'}
                                 className="inline-flex items-center gap-1.5 text-sm text-primary-400 hover:text-primary-300 mt-1"
                             >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
-                                {order.user?.phone || 'Phone not available'}
+                                {customerPhone || 'Phone not available'}
                             </a>
                         </div>
                     </div>
 
-                    {/* Order Items */}
+                    {/* Delivery Summary */}
                     <div className="p-4 bg-dark-800/50 rounded-xl border border-dark-700">
-                        <p className="text-xs text-dark-500 uppercase tracking-widest font-bold mb-3">Order Items ({order.order_items?.length || 0})</p>
-                        <div className="space-y-2 max-h-32 overflow-y-auto pr-2">
-                            {order.order_items?.slice(0, 3).map((item, index) => (
-                                <div key={item.id} className="flex justify-between items-center text-sm">
-                                    <span className="text-dark-300">{item.quantity}x {item.product.name}</span>
-                                    <span className="text-primary-400 font-medium">MWK {Number(item.subtotal).toLocaleString()}</span>
-                                </div>
-                            ))}
-                            {order.order_items && order.order_items.length > 3 && (
-                                <div className="text-xs text-dark-500 text-center pt-2 border-t border-dark-700">
-                                    + {order.order_items.length - 3} more items
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex justify-between items-center pt-3 mt-3 border-t border-dark-700 font-bold">
-                            <span className="text-dark-300">Total Amount</span>
-                            <span className="text-lg text-primary-400">MWK {Number(order.total_amount).toLocaleString()}</span>
+                        <p className="text-xs text-dark-500 uppercase tracking-widest font-bold mb-3">Delivery Summary</p>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded-lg border border-dark-700 bg-dark-900/50 px-3 py-2">
+                                <p className="text-[11px] uppercase tracking-wider text-dark-500">Items</p>
+                                <p className="text-lg font-semibold text-dark-100">{order.order_items_count ?? order.order_items?.length ?? 0}</p>
+                            </div>
+                            <div className="rounded-lg border border-dark-700 bg-dark-900/50 px-3 py-2">
+                                <p className="text-[11px] uppercase tracking-wider text-dark-500">Amount</p>
+                                <p className="text-lg font-semibold text-primary-400">MWK {Number(order.total_amount).toLocaleString()}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
