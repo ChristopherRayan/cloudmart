@@ -24,6 +24,12 @@ export default function DeliveryHistoryCard({ delivery }: DeliveryHistoryCardPro
         });
     };
 
+    const formatMoney = (value: unknown) => {
+        const numericValue = Number(value ?? 0);
+        const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
+        return safeValue.toFixed(2);
+    };
+
     return (
         <div className="bg-dark-800/50 rounded-xl border border-dark-700 overflow-hidden">
             <div 
@@ -77,7 +83,7 @@ export default function DeliveryHistoryCard({ delivery }: DeliveryHistoryCardPro
                         <p className="text-xs text-dark-500 uppercase tracking-widest font-bold mb-1">Completed</p>
                         <p className="text-sm font-medium text-dark-200">{formatDate(delivery.delivered_at)}</p>
                         <p className="text-xs text-dark-400 mt-2">
-                            ₱{(delivery.order?.total_amount || 0).toFixed(2)}
+                            ₱{formatMoney(delivery.order?.total_amount)}
                         </p>
                     </div>
                 </div>
@@ -140,13 +146,13 @@ export default function DeliveryHistoryCard({ delivery }: DeliveryHistoryCardPro
                                 {delivery.order?.order_items?.map(item => (
                                     <li key={item.id} className="flex justify-between text-sm">
                                         <span className="text-dark-300">{item.quantity}x {item.product.name}</span>
-                                        <span className="text-dark-200">₱{item.price.toFixed(2)}</span>
+                                        <span className="text-dark-200">₱{formatMoney(item.price)}</span>
                                     </li>
                                 ))}
                             </ul>
                             <div className="border-t border-dark-700 mt-2 pt-2 flex justify-between font-bold">
                                 <span className="text-dark-200">Total Amount</span>
-                                <span className="text-dark-100">₱{(delivery.order?.total_amount || 0).toFixed(2)}</span>
+                                <span className="text-dark-100">₱{formatMoney(delivery.order?.total_amount)}</span>
                             </div>
                         </div>
                     </div>
